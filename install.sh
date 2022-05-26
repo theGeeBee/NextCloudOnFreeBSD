@@ -22,9 +22,18 @@ DB_NAME="mySQL"
 # Install required packages and then start services
 kldload linux linux64 linprocfs linsysfs
 cat includes/requirements.txt | xargs pkg install -y
+
+sysrc apache24_enable="YES"
+sysrc mysql_enable="YES"
+sysrc sendmail_enable="YES"
+sysrc php_fpm_enable="YES"
+sysrc clamav_freshclam_enable="YES"
+sysrc linux_enable="YES"
+
 service linux start
 service mysql-server start
 apachectl start
+
 freshclam
 
 # Download NextCloud and replace config files
@@ -58,13 +67,6 @@ cp -f "${PWD}"/includes/002-headers.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
 
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
-
-sysrc apache24_enable="YES"
-sysrc mysql_enable="YES"
-sysrc sendmail_enable="YES"
-sysrc php_fpm_enable="YES"
-sysrc clamav_freshclam_enable="YES"
-sysrc linux_enable="YES"
 
 cat "${PWD}"/includes/fstab >> /etc/fstab
 
