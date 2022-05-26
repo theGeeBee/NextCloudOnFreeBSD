@@ -6,7 +6,6 @@ bash
 git
 ffmpeg
 clamav
-freshclam
 mysql80-server
 sendmail
 apache24
@@ -29,7 +28,6 @@ php80-intl
 php80-ldap
 php80-mbstring
 php80-opcache
-php80-openssl
 php80-pcntl
 php80-pdo
 php80-pdo_mysql
@@ -43,4 +41,4 @@ php80-xmlreader
 php80-xmlwriter
 php80-xsl
 php80-zip
-php80-zlib-8.0.19
+php80-zlib
