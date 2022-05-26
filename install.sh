@@ -9,15 +9,7 @@ if ! [ $(id -u) = 0 ]; then
    exit 1
 fi
 
-# Set some variable names
-HOST_NAME=""
-MY_IP=""
-NEXTCLOUD_VERSION="23"
-COUNTRY_CODE="ZA"
-ADMIN_PASSWORD=$(openssl rand -base64 12)
-DB_ROOT_PASSWORD=$(openssl rand -base64 16)
-DB_PASSWORD=$(openssl rand -base64 16)
-DB_NAME="mySQL"
+source config.ini
 
 # Install required packages and then start services
 kldload linux linux64 linprocfs linsysfs
