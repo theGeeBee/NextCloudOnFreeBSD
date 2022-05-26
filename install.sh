@@ -19,8 +19,13 @@ DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_PASSWORD=$(openssl rand -base64 16)
 DB_NAME="mySQL"
 
-# Install required packages
+# Install required packages and then start services
+kldload linux linux64 linprocfs linsysfs
 cat includes/requirements.txt | xargs pkg install -y
+service linux start
+service mysql-server start
+apachectl start
+freshclam
 
 # Download NextCloud and replace config files
 
@@ -78,7 +83,7 @@ mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('loc
 mysql -u root -e "DROP DATABASE IF EXISTS test;"
 mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
 mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
-cp -f /mnt/includes/my.cnf /root/.my.cnf
+cp -f ${PWD}/includes/my.cnf /root/.my.cnf
 sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 
 # Save passwords for later reference
@@ -92,7 +97,7 @@ chown www:www /var/log/nextcloud
 
 # CLI installation and configuration of Nextcloud
 
-su -m www -c "php /usr/local/www/nextcloud/occ maintenance:install --database=\"mysql\" --database-name=\"nextcloud\" --database-user=\"nextcloud\" --database-pass=\"${DB_PASSWORD}\" --database-host=\"localhost:/tmp/mysql.sock\" --admin-user=\"admin\" --admin-pass=\"${ADMIN_PASSWORD}\" --data-dir=\"/mnt/files\""
+su -m www -c "php /usr/local/www/apache24/data/occ maintenance:install --database=\"mysql\" --database-name=\"nextcloud\" --database-user=\"nextcloud\" --database-pass=\"${DB_PASSWORD}\" --database-host=\"localhost:/tmp/mysql.sock\" --admin-user=\"admin\" --admin-pass=\"${ADMIN_PASSWORD}\" --data-dir=\"/mnt/files\""
 su -m www -c "php /usr/local/www/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value=\"true\""
 su -m www -c "php /usr/local/www/nextcloud/occ db:add-missing-indices"
 su -m www -c "php /usr/local/www/nextcloud/occ db:convert-filecache-bigint --no-interaction"
@@ -140,4 +145,3 @@ echo "Using your web browser, go to https://${HOST_NAME} or https://${HOST_NAME}
 	echo "The ${DB_NAME} root password is ${DB_ROOT_PASSWORD}"
 	echo ""
 	echo "All passwords are saved in /root/${JAIL_NAME}_db_password.txt"
-fi
