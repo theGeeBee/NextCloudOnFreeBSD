@@ -10,9 +10,9 @@ if ! [ $(id -u) = 0 ]; then
 fi
 
 # Set some variable names
-HOST_NAME="nextcloud.zion.internal"
+HOST_NAME="nextcloud.zion.internal" # if your network doesn't resolve this, set to the same as your IP
 MY_IP="192.168.6.1"
-NEXTCLOUD_VERSION="23"
+NEXTCLOUD_VERSION="23" # currently set to v23 because the antivirus plugin is not yet compatible with v24
 COUNTRY_CODE="ZA"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
@@ -64,9 +64,11 @@ cp -f "${PWD}"/includes/www.conf /usr/local/etc/php-fpm.d/
 cp -f "${PWD}"/includes/httpd.conf /usr/local/etc/apache24/
 sed -i '' "s|MY_IP|${MY_IP}|" /usr/local/etc/apache24/httpd.conf
 cp -f "${PWD}"/includes/nextcloud.conf /usr/local/etc/apache24/Includes/
-cp -f "${PWD}"/includes/002-headers.conf /usr/local/etc/apache24/modules.d/
+cp -f "${PWD}"/includes/002_headers.conf /usr/local/etc/apache24/modules.d/
+cp -f "${PWD}"/includes/030_php-fpm.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
 
+# 
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
 
 cat "${PWD}"/includes/fstab >> /etc/fstab
