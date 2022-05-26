@@ -103,32 +103,32 @@ chown www:www /var/log/nextcloud
 mv /usr/local/www/apache24/data/nextcloud/* /usr/local/www/apache24/data/
 rm -r /usr/local/www/apache24/data/nextcloud
 
-su -m www -c "php /usr/local/www/apache24/data/occ maintenance:install --database=\"mysql\" --database-name=\"nextcloud\" --database-user=\"nextcloud\" --database-pass=\"${DB_PASSWORD}\" --database-host=\"localhost:/tmp/mysql.sock\" --admin-user=\"admin\" --admin-pass=\"${ADMIN_PASSWORD}\" --data-dir=\"/mnt/files\""
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set mysql.utf8mb4 --type boolean --value=\"true\""
-su -m www -c "php /usr/local/www/apache24/data/occ db:add-missing-indices"
-su -m www -c "php /usr/local/www/apache24/data/occ db:convert-filecache-bigint --no-interaction"
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set logtimezone --value=\"${TIME_ZONE}\""
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set default_phone_region --value=\"${COUNTRY_CODE}\""
-su -m www -c 'php /usr/local/www/apache24/data/occ config:system:set log_type --value="file"'
-su -m www -c 'php /usr/local/www/apache24/data/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"'
-su -m www -c 'php /usr/local/www/apache24/data/occ config:system:set loglevel --value="2"'
-su -m www -c 'php /usr/local/www/apache24/data/occ config:system:set logrotate_size --value="104847600"'
-su -m www -c 'php /usr/local/www/apache24/data/occ config:system:set memcache.local --value="\OC\Memcache\APCu"'
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set overwritehost --value=\"${HOST_NAME}\""
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set overwrite.cli.url --value=\"https://${HOST_NAME}/\""
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set overwriteprotocol --value=\"https\""
-su -m www -c 'php /usr/local/www/apache24/data/occ config:system:set htaccess.RewriteBase --value="/"'
-su -m www -c 'php /usr/local/www/apache24/data/occ maintenance:update:htaccess'
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set trusted_domains 1 --value=\"${HOST_NAME}\""
-su -m www -c "php /usr/local/www/apache24/data/occ config:system:set trusted_domains 2 --value=\"${MY_IP}\""
+sudo -u www "php /usr/local/www/apache24/data/occ maintenance:install --database=\"mysql\" --database-name=\"nextcloud\" --database-user=\"nextcloud\" --database-pass=\"${DB_PASSWORD}\" --database-host=\"localhost:/tmp/mysql.sock\" --admin-user=\"admin\" --admin-pass=\"${ADMIN_PASSWORD}\" --data-dir=\"/mnt/files\""
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set mysql.utf8mb4 --type boolean --value=\"true\""
+sudo -u www "php /usr/local/www/apache24/data/occ db:add-missing-indices"
+sudo -u www "php /usr/local/www/apache24/data/occ db:convert-filecache-bigint --no-interaction"
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set logtimezone --value=\"${TIME_ZONE}\""
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set default_phone_region --value=\"${COUNTRY_CODE}\""
+sudo -u www 'php /usr/local/www/apache24/data/occ config:system:set log_type --value="file"'
+sudo -u www 'php /usr/local/www/apache24/data/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"'
+sudo -u www 'php /usr/local/www/apache24/data/occ config:system:set loglevel --value="2"'
+sudo -u www 'php /usr/local/www/apache24/data/occ config:system:set logrotate_size --value="104847600"'
+sudo -u www 'php /usr/local/www/apache24/data/occ config:system:set memcache.local --value="\OC\Memcache\APCu"'
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set overwritehost --value=\"${HOST_NAME}\""
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set overwrite.cli.url --value=\"https://${HOST_NAME}/\""
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set overwriteprotocol --value=\"https\""
+sudo -u www 'php /usr/local/www/apache24/data/occ config:system:set htaccess.RewriteBase --value="/"'
+sudo -u www 'php /usr/local/www/apache24/data/occ maintenance:update:htaccess'
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set trusted_domains 1 --value=\"${HOST_NAME}\""
+sudo -u www "php /usr/local/www/apache24/data/occ config:system:set trusted_domains 2 --value=\"${MY_IP}\""
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
 ## This comes with limitations like a performance penalty, so enable this only if needed.
-# su -m www -c 'php /usr/local/www/apache24/data/occ app:enable encryption'
-# su -m www -c 'php /usr/local/www/apache24/data/occ encryption:enable'
-# su -m www -c 'php /usr/local/www/apache24/data/occ encryption:disable'
-su -m www -c 'php /usr/local/www/apache24/data/occ background:cron'
-su -m www -c 'php -f /usr/local/www/apache24/data/cron.php'
+# sudo -u www 'php /usr/local/www/apache24/data/occ app:enable encryption'
+# sudo -u www 'php /usr/local/www/apache24/data/occ encryption:enable'
+# sudo -u www 'php /usr/local/www/apache24/data/occ encryption:disable'
+sudo -u www 'php /usr/local/www/apache24/data/occ background:cron'
+sudo -u www 'php -f /usr/local/www/apache24/data/cron.php'
 crontab -u www includes/www-crontab
 
 #####
