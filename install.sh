@@ -80,7 +80,8 @@ chown www /var/log/nextcloud.log
 
 # Secure database, set root password, create Nextcloud DB, user, and password
 mysql -u root -e "CREATE DATABASE nextcloud;"
-mysql -u root -e "GRANT ALL ON nextcloud.* TO nextcloud@localhost IDENTIFIED WITH 'mysql_native_password' BY '${DB_PASSWORD}';"
+mysql -u root -e "CREATE USER 'nextcloud'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${DB_PASSWORD}';"
+mysql -u root -e "GRANT ALL ON nextcloud.* TO 'nextcloud'@'localhost';"
 mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
 mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
 mysql -u root -e "DROP DATABASE IF EXISTS test;"
