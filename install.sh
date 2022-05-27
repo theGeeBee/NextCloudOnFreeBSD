@@ -150,9 +150,10 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
 sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 crontab -u www ${PWD}/includes/www-crontab
 
-## Restart Apache (I don't know why this needs to happen, but it does at the moment. Will debug at some point)
+## Restart Services
 
 apachectl restart
+service php-fpm restart
 
 #####
 #
