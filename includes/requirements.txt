@@ -1,8 +1,7 @@
-nano
 sudo
+nano
 vim
 gnupg
-bash
 git
 ffmpeg
 clamav
@@ -11,7 +10,6 @@ sendmail
 apache24
 samba412
 linux_base-c7
-mod_php80
 php80
 php80-bcmath
 php80-bz2

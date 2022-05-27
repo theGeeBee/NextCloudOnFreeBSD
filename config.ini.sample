@@ -1,7 +1,9 @@
 # Set some variable names
-HOST_NAME=""
-MY_IP=""
-NEXTCLOUD_VERSION="23"
+HOST_NAME="nextcloud.zion.internal" # set to the same as your DNS entry
+MY_IP="192.168.6.1"
+MY_EMAIL="nextcloud_admin@${HOST_NAME}"
+NEXTCLOUD_VERSION="23" # currently set to v23 because the antivirus plugin is not yet compatible with v24
+DATA_DIRECTORY="/mnt/files" 
 COUNTRY_CODE="ZA"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)

@@ -16,6 +16,5 @@ Installs the following:
 
 * HTTP/2
 * SSL Enabled, TLS1.2+ only
-* Rewrite enabled
 * Linux partitions mounted
 * PHP Memory Caching APCu

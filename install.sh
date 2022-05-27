@@ -5,14 +5,16 @@
 
 # Check for root privileges
 if ! [ $(id -u) = 0 ]; then
-   echo "This script must be run with root privileges"
+   echo "This script must be run with root privileges."
    exit 1
 fi
 
-# Set some variable names
-HOST_NAME="nextcloud.zion.internal" # if your network doesn't resolve this, set to the same as your IP
+# Configuration
+HOST_NAME="nextcloud.zion.internal" # set to the same as your DNS entry
 MY_IP="192.168.6.1"
+MY_EMAIL="nextcloud_admin@${HOST_NAME}"
 NEXTCLOUD_VERSION="23" # currently set to v23 because the antivirus plugin is not yet compatible with v24
+DATA_DIRECTORY="/mnt/files" 
 COUNTRY_CODE="ZA"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
@@ -20,8 +22,15 @@ DB_PASSWORD=$(openssl rand -base64 16)
 DB_NAME="mySQL"
 
 # Install required packages and then start services
+# Load required kernel modules
+
 kldload linux linux64 linprocfs linsysfs
+
+# Install required packages
+
 cat includes/requirements.txt | xargs pkg install -y
+
+# Enable services
 
 sysrc apache24_enable="YES"
 sysrc mysql_enable="YES"
@@ -30,10 +39,14 @@ sysrc php_fpm_enable="YES"
 sysrc clamav_freshclam_enable="YES"
 sysrc linux_enable="YES"
 
+# Start services
+
 service linux start
 service mysql-server start
 service php-fpm start
 apachectl start
+
+# Updata virus definitions
 
 freshclam
 
@@ -53,7 +66,7 @@ then
 	exit 1
 fi
 tar xjf /tmp/"${FILE}" -C /usr/local/www/apache24/data
-chown -R www:www /usr/local/www/apache24/data
+chown -R www:www /usr/local/www/apache24/data/nextcloud
 
 # Copy and edit pre-written config files
 cp -f "${PWD}"/includes/php.ini /usr/local/etc/php.ini
@@ -77,8 +90,6 @@ cat "${PWD}"/includes/fstab >> /etc/fstab
 #####
 #
 # NextCloud Install 
-touch /var/log/nextcloud.log
-chown www /var/log/nextcloud.log
 
 # Secure database, set root password, create Nextcloud DB, user, and password
 mysql -u root -e "CREATE DATABASE nextcloud;"
@@ -102,40 +113,38 @@ mkdir -p /var/log/nextcloud/
 chown www:www /var/log/nextcloud
 
 # Create NextCloud data directory
-mkdir -p /mnt/files
-chown www:www /mnt/files
+mkdir -p "${DATA_DIRECTORY}"
+chown www:www "${DATA_DIRECTORY}"
 
 # CLI installation and configuration of Nextcloud
 
-mv /usr/local/www/apache24/data/nextcloud/* /usr/local/www/apache24/data/
-rm -r /usr/local/www/apache24/data/nextcloud
-
-sudo -u www php /usr/local/www/apache24/data/occ maintenance:install --database="mysql" --database-name="nextcloud" --database-user="nextcloud" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="admin" --admin-pass="${ADMIN_PASSWORD}" --data-dir="/mnt/files"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
-sudo -u www php /usr/local/www/apache24/data/occ db:add-missing-indices
-sudo -u www php /usr/local/www/apache24/data/occ db:convert-filecache-bigint --no-interaction
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set logtimezone --value="${TIME_ZONE}"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set default_phone_region --value="${COUNTRY_CODE}"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set log_type --value="file"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set loglevel --value="2"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set logrotate_size --value="104847600"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set overwritehost --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set overwrite.cli.url --value="https://${HOST_NAME}/"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set overwriteprotocol --value="https"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set htaccess.RewriteBase --value="/"
-sudo -u www php /usr/local/www/apache24/data/occ maintenance:update:htaccess
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/occ config:system:set trusted_domains 2 --value="${MY_IP}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:install --database="mysql" --database-name="nextcloud" --database-user="nextcloud" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="admin" --admin-pass="${ADMIN_PASSWORD}" --data-dir="/mnt/files"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-indices
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:convert-filecache-bigint --no-interaction
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logtimezone --value="${TIME_ZONE}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set default_phone_region --value="${COUNTRY_CODE}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log_type --value="file"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
+## Uncomment the following lines only if DNS works properly on your network.
+#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
+#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${HOST_NAME}/"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 2 --value="${MY_IP}"
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
 ## This comes with limitations like a performance penalty, so enable this only if needed.
-# sudo -u www php /usr/local/www/apache24/data/occ app:enable encryption
-# sudo -u www php /usr/local/www/apache24/data/occ encryption:enable
-# sudo -u www php /usr/local/www/apache24/data/occ encryption:disable
-sudo -u www php /usr/local/www/apache24/data/occ background:cron
-sudo -u www php -f /usr/local/www/apache24/data/cron.php
+# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable encryption
+# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:enable
+# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:disable
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
+sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 crontab -u www ${PWD}/includes/www-crontab
 
 #####
