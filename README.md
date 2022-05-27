@@ -38,4 +38,5 @@ After installing using default settings with self-signed certificate, under ONLY
 To get things working immediately, set the following under SETTINGS -> SECURITY
 
 **Mode:** ClamAV Executable
+
 **Path to Clamscan:** /usr/local/bin/clamscan
