@@ -137,6 +137,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set hta
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 2 --value="${MY_IP}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_antivirus
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffice
 ## SERVER SIDE ENCRYPTION 
