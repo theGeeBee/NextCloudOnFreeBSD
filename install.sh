@@ -10,10 +10,10 @@ if ! [ $(id -u) = 0 ]; then
 fi
 
 # Configuration
-HOST_NAME="nextcloud.zion.internal" # set to the same as your DNS entry
+HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entry
 MY_IP="192.168.6.1"
 MY_EMAIL="nextcloud_admin@${HOST_NAME}"
-NEXTCLOUD_VERSION="23" # currently set to v23 because the antivirus plugin is not yet compatible with v24
+NEXTCLOUD_VERSION="23"
 DATA_DIRECTORY="/mnt/files" 
 COUNTRY_CODE="ZA"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
@@ -137,6 +137,8 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set hta
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 2 --value="${MY_IP}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffice
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
 ## This comes with limitations like a performance penalty, so enable this only if needed.
@@ -146,6 +148,10 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set tru
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
 sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 crontab -u www ${PWD}/includes/www-crontab
+
+## Restart Apache (I don't know why this needs to happen, but it does at the moment. Will debug at some point)
+
+apachectl restart
 
 #####
 #
