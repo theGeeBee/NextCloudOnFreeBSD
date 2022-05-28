@@ -25,7 +25,7 @@ ADMIN_PASSWORD=$(openssl rand -base64 12)
 DATA_DIRECTORY="/mnt/files" ## Please use something like /path/to/zfs/dataset/without/dedup/ - and use the script to create a subdirectory for NC data 
 ### mySQL setttings
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
-DB_USERNAME="nc_connect"
+DB_USERNAME="NextcloudDBUser"
 DB_PASSWORD=$(openssl rand -base64 16)
 DB_NAME="nextcloud" 
 
