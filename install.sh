@@ -25,7 +25,7 @@ ADMIN_PASSWORD=$(openssl rand -base64 12)
 DATA_DIRECTORY="/mnt/files" ## Please use something like /path/to/zfs/dataset/without/dedup/ - and use the script to create a subdirectory for NC data 
 ### mySQL setttings
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
-DB_USERNAME="NextcloudDBUser"
+DB_USERNAME="nextcloud"
 DB_PASSWORD=$(openssl rand -base64 16)
 DB_NAME="nextcloud" 
 
@@ -214,7 +214,8 @@ service php-fpm restart
 
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
-sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
+## Disabling this for now, because it takes too much time at this point and is going to run as a cron job anyway.
+# sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php 
 crontab -u www ${PWD}/includes/www-crontab
 
 #####
@@ -224,7 +225,7 @@ crontab -u www ${PWD}/includes/www-crontab
 #####
 
 # Done!
-# clear
+clear
 echo "Installation Complete!"
 echo ""
 cat /root/${HOST_NAME}_reference.txt
