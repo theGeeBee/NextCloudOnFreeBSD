@@ -22,7 +22,7 @@ TIME_ZONE="UTC" # this is used for the logging
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_PASSWORD=$(openssl rand -base64 16)
-DB_NAME="mySQL" # currently not used
+DB_NAME="mySQL" 
 
 # Install required packages and then start services
 # Load required kernel modules
@@ -106,10 +106,27 @@ mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
 cp -f ${PWD}/includes/my.cnf /root/.my.cnf
 sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 
+
 # Save passwords for later reference
-echo "${DB_NAME} root password is ${DB_ROOT_PASSWORD}" > /root/${HOST_NAME}_db_password.txt
-echo "Nextcloud database password is ${DB_PASSWORD}" >> /root/${HOST_NAME}_db_password.txt
-echo "Nextcloud Administrator password is ${ADMIN_PASSWORD}" >> /root/${HOST_NAME}_db_password.txt
+cat >> /root/${HOST_NAME}_reference.txt <<EOL
+Nextcloud installation details:
+===============================
+
+Server address : https://${HOST_NAME} or https://${MY_IP}
+
+Login Information:
+------------------
+Username : admin
+Password : ${ADMIN_PASSWORD}
+
+Database Information:
+---------------------
+Database name       : ${DB_NAME}
+Database username   : nextcloud
+Database password   : ${DB_PASSWORD}
+mySQL root password : ${DB_ROOT_PASSWORD}
+
+EOL
 
 # Create Nextcloud log directory
 mkdir -p /var/log/nextcloud/
@@ -198,17 +215,7 @@ service php-fpm restart
 #####
 
 # Done!
-# clear
-echo "Installation complete!"
-echo "Using your web browser, go to https://${HOST_NAME} or https://${MY_IP} to log in"
-
-
-echo "Default user is admin, password is ${ADMIN_PASSWORD}"
-echo ""
-echo "Database Information"
-echo "--------------------"
-echo "Database user = nextcloud"
-echo "Database password = ${DB_PASSWORD}"
-echo "The ${DB_NAME} root password is ${DB_ROOT_PASSWORD}"
-echo ""
-echo "All passwords are saved in /root/${HOST_NAME}_db_password.txt"
+clear
+echo "Installation Complete\!\n"
+cat /root/${HOST_NAME}_reference.txt
+echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
