@@ -18,6 +18,7 @@ NEXTCLOUD_VERSION="23" # apps don't work on v24 yet, as of 2022/05/27
 ## Please use something like /path/to/zfs/dataset/without/dedup/ - and let the script create a subdirectory
 DATA_DIRECTORY="/mnt/files" 
 COUNTRY_CODE="ZA"
+TIME_ZONE="UTC" # this is used for the logging
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_PASSWORD=$(openssl rand -base64 16)
@@ -165,7 +166,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffic
 
 # Set Nextcloud to use sendmail (you can change this later)
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode--value="smtp"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
 
