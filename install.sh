@@ -209,8 +209,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_exte
 
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
-## Disabling this for now, because it takes too much time at this point and is going to run as a cron job anyway.
-# sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php 
+sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php 
 crontab -u www ${PWD}/includes/www-crontab
 
 ## Restart Services
