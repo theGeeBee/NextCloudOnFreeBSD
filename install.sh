@@ -103,7 +103,7 @@ openssl req -x509 -nodes -days 3650 -sha512 -subj $OPENSSL_REQUEST -newkey rsa:2
 # Create mySQL database
 # Secure database, set mysql root password, create Nextcloud DB, user, and password
 mysql -u root -e "CREATE DATABASE ${DB_NAME};"
-mysql -u root -e "CREATE USER '${DB_USER}'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${DB_PASSWORD}';"
+mysql -u root -e "CREATE USER '${DB_USERNAME}'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${DB_PASSWORD}';"
 mysql -u root -e "GRANT ALL ON nextcloud.* TO 'nextcloud'@'localhost';"
 mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
 mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
@@ -130,7 +130,7 @@ Password : ${ADMIN_PASSWORD}
 Database Information:
 ---------------------
 Database name       : ${DB_NAME}
-Database username   : ${DB_USER}
+Database username   : ${DB_USERNAME}
 Database password   : ${DB_PASSWORD}
 mySQL root password : ${DB_ROOT_PASSWORD}
 
@@ -147,7 +147,7 @@ chown www:www "${DATA_DIRECTORY}"
 #####
 # CLI installation and configuration of Nextcloud
 
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USER}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-indices
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:convert-filecache-bigint --no-interaction
@@ -224,7 +224,7 @@ crontab -u www ${PWD}/includes/www-crontab
 #####
 
 # Done!
-clear
+# clear
 echo "Installation Complete!"
 echo ""
 cat /root/${HOST_NAME}_reference.txt
