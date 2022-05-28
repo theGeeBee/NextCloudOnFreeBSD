@@ -1,6 +1,6 @@
 #!/bin/sh
 # Install NextCloud on FreeBSD
-# Tested on FreeBSD 13.x
+# Tested on FreeBSD 13+
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 
 # Check for root privileges
@@ -10,16 +10,18 @@ if ! [ $(id -u) = 0 ]; then
 fi
 
 # Configuration
-HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entry
+HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entry **required
 MY_IP="192.168.6.1"
 MY_EMAIL="nextcloud_admin@${HOST_NAME}"
-NEXTCLOUD_VERSION="23"
+SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
+NEXTCLOUD_VERSION="23" # apps don't work on v24 yet, as of 2022/05/27
+## Please use something like /path/to/zfs/dataset/without/dedup/ - and let the script create a subdirectory
 DATA_DIRECTORY="/mnt/files" 
 COUNTRY_CODE="ZA"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_PASSWORD=$(openssl rand -base64 16)
-DB_NAME="mySQL"
+DB_NAME="mySQL" # currently not used
 
 # Install required packages and then start services
 # Load required kernel modules
@@ -65,7 +67,7 @@ then
 	echo "The Nextcloud download is corrupt."
 	exit 1
 fi
-tar xjf /tmp/"${FILE}" -C /usr/local/www/apache24/data
+tar xjf /tmp/"${FILE}" -C /usr/local/www/apache24/data/
 chown -R www:www /usr/local/www/apache24/data/nextcloud
 
 # Copy and edit pre-written config files
@@ -91,7 +93,7 @@ cat "${PWD}"/includes/fstab >> /etc/fstab
 #
 # NextCloud Install 
 
-# Secure database, set root password, create Nextcloud DB, user, and password
+# Secure database, set mysql root password, create Nextcloud DB, user, and password
 mysql -u root -e "CREATE DATABASE nextcloud;"
 mysql -u root -e "CREATE USER 'nextcloud'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${DB_PASSWORD}';"
 mysql -u root -e "GRANT ALL ON nextcloud.* TO 'nextcloud'@'localhost';"
@@ -129,23 +131,56 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
-## Uncomment the following lines only if DNS works properly on your network.
+## Uncomment the following 2 lines only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${HOST_NAME}/"
+#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https:/${HOST_NAME}/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 2 --value="${MY_IP}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 0 --value="${HOST_NAME}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${MY_IP}"
+
+## Install Nextcloud Apps
+# Featured Apps (alphabetical)
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install calendar
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install contacts
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install deck
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install mail
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install notes
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install spreed # Nextcloud Talk
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install tasks
+# Antivirus for Files
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_antivirus
+	#set correct value for path on FreeBSD and set default action
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_path --value="/usr/local/bin/clamscan" 
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="delete"
+# Document Server Community Edition
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
+# ONLYOFFICE
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffice
+	# set ONLYOFFICE to accept the self-signed certificate and point it to ${MY_IP} instead of localhost
+	# ${HOST_NAME} would work instead if DNS is set up correctly
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice verify_peer_off --value="true"
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice DocumentServerUrl --value="https://${MY_IP}/index.php/apps/documentserver_community/"
+
+# Set Nextcloud to use sendmail (you can change this later)
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode--value="smtp"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
+
+# Enable external storage support (Example: mount a SMB share in Nextcloud)
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
+
+
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
 ## This comes with limitations like a performance penalty, so enable this only if needed.
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable encryption
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:enable
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:disable
+
+## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
 sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 crontab -u www ${PWD}/includes/www-crontab
@@ -162,6 +197,7 @@ service php-fpm restart
 #####
 
 # Done!
+# clear
 echo "Installation complete!"
 echo "Using your web browser, go to https://${HOST_NAME} or https://${MY_IP} to log in"
 
