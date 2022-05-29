@@ -160,7 +160,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
 ## Uncomment the following 2 lines only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https:/${HOST_NAME}/"
+#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${HOST_NAME}/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
@@ -170,6 +170,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set tru
 #####
 # Install Nextcloud Apps
 # Featured Apps (alphabetical)
+
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install calendar
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install contacts
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install deck
@@ -198,7 +199,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mai
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
 
 # Enable external storage support (Example: mount a SMB share in Nextcloud)
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
+# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
 
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
@@ -219,11 +220,11 @@ service php-fpm restart
 
 #####
 #
-# Output results to console
+# All done!
+# Print copy of reference info to console
 #
 #####
 
-# Done!
 clear
 echo "Installation Complete!"
 echo ""
