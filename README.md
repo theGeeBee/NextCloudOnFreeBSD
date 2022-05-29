@@ -1,6 +1,17 @@
 # NextCloud on FreeBSD
 Script to automate installation of Nextcloud on FreeBSD
 
+## Instructions
+
+1. Clone repository or download release to your machine and extract
+2. `cd` to folder as root
+3. Open install.sh with your favourite editor
+4. Change the values of variables as required to suite your environment
+5. Save the file
+6. Run `install.sh` as root
+7. Please be patient while the script runs
+8. Done
+
 **Installs the following:**
 
 * Apache 2.4
