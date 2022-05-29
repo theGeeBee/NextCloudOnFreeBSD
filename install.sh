@@ -34,7 +34,7 @@ DB_NAME="nextcloud"
 # Install required packages and then start services
 # Load required kernel modules
 
-kldload linux linux64 linprocfs linsysfs
+kldload linux.ko linux64.ko linprocfs.ko linsysfs.ko
 
 # Install required packages
 
@@ -100,6 +100,11 @@ cat "${PWD}"/includes/fstab >> /etc/fstab
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
 openssl req -x509 -nodes -days 3650 -sha512 -subj $OPENSSL_REQUEST -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
 
+## Restart Services for modified configuration to take effect
+
+service php-fpm restart
+apachectl restart
+
 #####
 # Create mySQL database
 # Secure database, set mysql root password, create Nextcloud DB, user, and password
@@ -159,14 +164,14 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
-## Uncomment the following line only if DNS works properly on your network.
+## Uncomment the following lines only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
+#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${HOST_NAME}/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 0 --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${MY_IP}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 2 --value="${HOST_NAME}"
 
 # Set Nextcloud to use sendmail (you can change this later in the GUI)
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
@@ -204,7 +209,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffic
 	# set ONLYOFFICE to accept the self-signed certificate and point it to ${MY_IP} instead of localhost
 	# ${HOST_NAME} would work instead if DNS is set up correctly
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice verify_peer_off --value="true"
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice DocumentServerUrl --value="https://${MY_IP}/index.php/apps/documentserver_community/"
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice DocumentServerUrl --value="https://${MY_IP}/apps/documentserver_community/"
 
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
@@ -212,11 +217,6 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffic
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable encryption
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:enable
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:disable
-
-## Restart Services
-
-service php-fpm restart
-apachectl restart
 
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
