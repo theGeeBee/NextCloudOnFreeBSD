@@ -53,6 +53,7 @@ sysrc linux_enable="YES"
 service linux start
 service mysql-server start
 service php-fpm start
+service sendmail start
 apachectl start
 
 # Updata virus definitions
@@ -199,7 +200,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mai
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
 
 # Enable external storage support (Example: mount a SMB share in Nextcloud)
-# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
 
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
