@@ -63,7 +63,6 @@ freshclam
 
 ######
 # Download and verify Nextcloud
-
 FILE="latest-${NEXTCLOUD_VERSION}.tar.bz2"
 if ! fetch -o /tmp https://download.nextcloud.com/server/releases/"${FILE}" https://download.nextcloud.com/server/releases/"${FILE}".asc https://nextcloud.com/nextcloud.asc
 then
@@ -169,10 +168,21 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:ht
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 0 --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${MY_IP}"
 
+# Set Nextcloud to use sendmail (you can change this later in the GUI)
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
+
+# Enable external storage support (Example: mount a SMB share in Nextcloud)
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
+
 #####
 # Install Nextcloud Apps
 # Featured Apps (alphabetical)
 
+clear
+echo "Nextcloud is now installed, installing Apps..."
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install calendar
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install contacts
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install deck
@@ -186,6 +196,8 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_ant
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_path --value="/usr/local/bin/clamscan" 
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="delete"
 # Document Server Community Edition
+clear
+echo "Installing Document Server + ONLYOFFICE, this will take longer than the other Apps..."
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
 # ONLYOFFICE
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffice
@@ -193,15 +205,6 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffic
 	# ${HOST_NAME} would work instead if DNS is set up correctly
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice verify_peer_off --value="true"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice DocumentServerUrl --value="https://${MY_IP}/index.php/apps/documentserver_community/"
-
-# Set Nextcloud to use sendmail (you can change this later in the GUI)
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
-
-# Enable external storage support (Example: mount a SMB share in Nextcloud)
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
 
 ## SERVER SIDE ENCRYPTION 
 ## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
@@ -213,14 +216,14 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_exte
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
 clear
-echo "Running Nextcloud maintenance for the first time, please be patient..."
+echo "Running Nextcloud maintenance for the first time, please be patient, this is the final step..."
 sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php 
 crontab -u www ${PWD}/includes/www-crontab
 
 ## Restart Services
 
-apachectl restart
 service php-fpm restart
+apachectl restart
 
 #####
 #
