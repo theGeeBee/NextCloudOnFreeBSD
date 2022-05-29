@@ -213,17 +213,14 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffic
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:enable
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:disable
 
-## Set Nextcloud to run maintenace tasks as a cron job
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
-clear
-echo "Running Nextcloud maintenance for the first time, please be patient, this is the final step..."
-sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php 
-crontab -u www ${PWD}/includes/www-crontab
-
 ## Restart Services
 
 service php-fpm restart
 apachectl restart
+
+## Set Nextcloud to run maintenace tasks as a cron job
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
+crontab -u www ${PWD}/includes/www-crontab
 
 #####
 #
@@ -237,3 +234,4 @@ echo "Installation Complete!"
 echo ""
 cat /root/${HOST_NAME}_reference.txt
 echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
+echo "A reboot may be required for the Nextcloud maintenance service to run properly."
