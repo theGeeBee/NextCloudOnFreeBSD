@@ -170,8 +170,8 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set ove
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${MY_IP}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 2 --value="${HOST_NAME}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 0 --value="${MY_IP}"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
 
 # Set Nextcloud to use sendmail (you can change this later in the GUI)
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
