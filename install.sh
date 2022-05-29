@@ -159,9 +159,9 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
-## Uncomment the following 2 lines only if DNS works properly on your network.
+## Uncomment the following line only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${HOST_NAME}/"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
@@ -220,6 +220,7 @@ apachectl restart
 
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
+sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 crontab -u www ${PWD}/includes/www-crontab
 
 #####
@@ -234,4 +235,3 @@ echo "Installation Complete!"
 echo ""
 cat /root/${HOST_NAME}_reference.txt
 echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
-echo "A reboot may be required for the Nextcloud maintenance service to run properly."
