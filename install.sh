@@ -161,7 +161,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
 ## Uncomment the following line only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}/"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
