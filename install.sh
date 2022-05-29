@@ -220,7 +220,7 @@ apachectl restart
 
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
-sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
+# sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 crontab -u www ${PWD}/includes/www-crontab
 
 #####
