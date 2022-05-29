@@ -1,6 +1,7 @@
 #!/bin/sh
-# Install NextCloud on FreeBSD
-# Tested on FreeBSD 13+
+# Install Nextcloud on FreeBSD
+# Tested on FreeBSD 13.1
+# Last update: 2022-05-29
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 
 # Check for root privileges
@@ -11,18 +12,18 @@ fi
 
 ### Configuration (All fields are required)
 ### Common settings
-HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entry **required
-MY_IP="192.168.6.1"
-MY_EMAIL="nextcloud_admin@${HOST_NAME}"
+HOST_NAME="my.nextcloud.server" # Advisory: set to the same as your DNS entry
+MY_IP="10.0.0.10"
+MY_EMAIL="nextcloud-admin@${HOST_NAME}"
 SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
 NEXTCLOUD_VERSION="23" # apps don't work on v24 yet, as of 2022/05/28
 ### Settings for Nextcloud, loggings, and openSSL
-COUNTRY_CODE="ZA"
+COUNTRY_CODE="XW" # example: US/UK/CA/AU/DE, etc.
 TIME_ZONE="UTC"
 ### Nextcloud settings
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
-DATA_DIRECTORY="/mnt/files" ## Please use something like /path/to/zfs/dataset/without/dedup/ - and use the script to create a subdirectory for NC data 
+DATA_DIRECTORY="/mnt/nextcloud_data" ## Please use something like /path/to/zfs/dataset/without/dedup/ - and use the script to create a subdirectory for NC data 
 ### mySQL setttings
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_USERNAME="nextcloud"
@@ -211,6 +212,8 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_exte
 
 ## Set Nextcloud to run maintenace tasks as a cron job
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
+clear
+echo "Running Nextcloud maintenance for the first time, please be patient..."
 sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php 
 crontab -u www ${PWD}/includes/www-crontab
 
