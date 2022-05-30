@@ -180,7 +180,10 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mai
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
 
 # Enable external storage support (Example: mount a SMB share in Nextcloud)
+# Users are allowed to mount external storage, but can be disabled under Settings -> Admin -> External Storage
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_external allow_user_mounting --value="yes"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
 
 #####
 # Install Nextcloud Apps
