@@ -19,6 +19,7 @@ php80-dom
 php80-exif
 php80-fileinfo
 php80-filter
+php80-ftp
 php80-gd
 php80-gmp
 php80-iconv
