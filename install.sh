@@ -1,10 +1,12 @@
 #!/bin/sh
+###
 # Install Nextcloud on FreeBSD
 # Tested on FreeBSD 13.1
-# Last update: 2022-05-29
+# Last update: 2022-06-01
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
+###
 
-# Check for root privileges
+### Check for root privileges
 if ! [ $(id -u) = 0 ]; then
    echo "This script must be run with root privileges."
    exit 1
@@ -12,57 +14,65 @@ fi
 
 ### Configuration (All fields are required)
 ### Common settings
+###
 HOST_NAME="my.nextcloud.server" # Advisory: set to the same as your DNS entry
 MY_IP="10.0.0.10"
 MY_EMAIL="nextcloud-admin@${HOST_NAME}"
 SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
-NEXTCLOUD_VERSION="23" # apps don't work on v24 yet, as of 2022/05/28
-### Settings for Nextcloud, loggings, and openSSL
-COUNTRY_CODE="XW" # example: US/UK/CA/AU/DE, etc.
-TIME_ZONE="UTC"
+NEXTCLOUD_VERSION="23" # Some Apps don't work on v24 yet, as of 2022/05/28
+
+### Settings for Nextcloud, loggings, and openSSL:
+###
+COUNTRY_CODE="XW" # Example: US/UK/CA/AU/DE, etc.
+TIME_ZONE="UTC" # See: https://www.php.net/manual/en/timezones.php
+
 ### Nextcloud settings
+###
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD=$(openssl rand -base64 12)
 DATA_DIRECTORY="/mnt/nextcloud_data" ## Please use something like /path/to/zfs/dataset/without/dedup/ - and use the script to create a subdirectory for NC data 
+
 ### mySQL setttings
+###
 DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_USERNAME="nextcloud"
 DB_PASSWORD=$(openssl rand -base64 16)
 DB_NAME="nextcloud" 
 
-#####
-# Install required packages and then start services
-# Load required kernel modules
+### Install required packages and then start services
+### Load required kernel modules
 
 kldload linux.ko linux64.ko linprocfs.ko linsysfs.ko
 
-# Install required packages
+### Install required packages
 
 cat includes/requirements.txt | xargs pkg install -y
 
-# Enable services
+### Enable services
 
+sysrc linux_enable="YES"
+sysrc sendmail_enable="YES"
+sysrc clamav_clamd_enable="YES"
+sysrc clamav_freshclam_enable="YES"
 sysrc apache24_enable="YES"
 sysrc mysql_enable="YES"
-sysrc sendmail_enable="YES"
 sysrc php_fpm_enable="YES"
-sysrc clamav_freshclam_enable="YES"
-sysrc linux_enable="YES"
 
-# Start services
-
-service linux start
-service mysql-server start
-service php-fpm start
-service sendmail start
-apachectl start
-
-# Updata virus definitions
+### Update virus definitions (We run this before enabling ClamAV Daemon to prevent errors)
 
 freshclam
 
-######
-# Download and verify Nextcloud
+### Start services
+
+service linux start
+service sendmail start
+service clamav-clamd onestart
+apachectl start
+service mysql-server start
+service php-fpm start
+
+### Download and verify Nextcloud
+
 FILE="latest-${NEXTCLOUD_VERSION}.tar.bz2"
 if ! fetch -o /tmp https://download.nextcloud.com/server/releases/"${FILE}" https://download.nextcloud.com/server/releases/"${FILE}".asc https://nextcloud.com/nextcloud.asc
 then
@@ -76,11 +86,14 @@ then
 	echo "The Nextcloud download is corrupt."
 	exit 1
 fi
-# Extract Nextcloud and give `www` ownership of the directory
+
+### Extract Nextcloud and give `www` ownership of the directory
+
 tar xjf /tmp/"${FILE}" -C /usr/local/www/apache24/data/
 chown -R www:www /usr/local/www/apache24/data/nextcloud
 
-# Copy and edit pre-written config files
+### Copy and edit pre-written config files
+
 cp -f "${PWD}"/includes/php.ini /usr/local/etc/php.ini
 sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" /usr/local/etc/php.ini
 
@@ -93,21 +106,21 @@ cp -f "${PWD}"/includes/002_headers.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/030_php-fpm.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
 
-# Set linux compatibility mount points
+### Set linux compatibility mount points
 cat "${PWD}"/includes/fstab >> /etc/fstab
 
-# Create self-signed SSL certificate
+### Create self-signed SSL certificate
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
 openssl req -x509 -nodes -days 3650 -sha512 -subj $OPENSSL_REQUEST -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
 
-## Restart Services for modified configuration to take effect
+### Restart Services for modified configuration to take effect
 
 service php-fpm restart
-apachectl restart
+apachectl graceful
 
-#####
-# Create mySQL database
-# Secure database, set mysql root password, create Nextcloud DB, user, and password
+### Create mySQL database
+### Secure database, set mysql root password, create Nextcloud DB, user, and password
+
 mysql -u root -e "CREATE DATABASE ${DB_NAME};"
 mysql -u root -e "CREATE USER '${DB_USERNAME}'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '${DB_PASSWORD}';"
 mysql -u root -e "GRANT ALL ON nextcloud.* TO 'nextcloud'@'localhost';"
@@ -119,8 +132,8 @@ mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
 cp -f ${PWD}/includes/my.cnf /root/.my.cnf
 sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 
+### Create reference file
 
-# Create reference file
 cat >> /root/${HOST_NAME}_reference.txt <<EOL
 Nextcloud installation details:
 ===============================
@@ -142,16 +155,17 @@ mySQL root password : ${DB_ROOT_PASSWORD}
 
 EOL
 
-# Create Nextcloud log directory
+### Create Nextcloud log directory
+
 mkdir -p /var/log/nextcloud/
 chown www:www /var/log/nextcloud
 
-# Create NextCloud data directory
+### Create NextCloud data directory
+
 mkdir -p "${DATA_DIRECTORY}"
 chown www:www "${DATA_DIRECTORY}"
 
-#####
-# CLI installation and configuration of Nextcloud
+### CLI installation and configuration of Nextcloud
 
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
@@ -164,7 +178,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
-## Uncomment the following lines only if DNS works properly on your network.
+### Uncomment the following lines only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
@@ -173,21 +187,22 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:ht
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 0 --value="${MY_IP}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
 
-# Set Nextcloud to use sendmail (you can change this later in the GUI)
+### Set Nextcloud to use sendmail (you can change this later in the GUI)
+
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
 
-# Enable external storage support (Example: mount a SMB share in Nextcloud)
-# Users are allowed to mount external storage, but can be disabled under Settings -> Admin -> External Storage
+### Enable external storage support (Example: mount a SMB share in Nextcloud)
+### Users are allowed to mount external storage, but can be disabled under Settings -> Admin -> External Storage
+
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_external allow_user_mounting --value="yes"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
 
-#####
-# Install Nextcloud Apps
-# Featured Apps (alphabetical)
+### Install Nextcloud Apps
+### Featured Apps (alphabetical)
 
 clear
 echo "Nextcloud is now installed, installing Apps..."
@@ -198,40 +213,44 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install mail
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install notes
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install spreed # Nextcloud Talk
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install tasks
-# Antivirus for Files
+
+### Antivirus for Files
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_antivirus
-	#set correct value for path on FreeBSD and set default action
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_path --value="/usr/local/bin/clamscan" 
+	### set correct value for path on FreeBSD and set default action
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_mode --value="socket"
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="delete"
-# Document Server Community Edition
+
+### Document Server Community Edition
+
 clear
 echo "Installing Document Server + ONLYOFFICE, this will take longer than the other Apps..."
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
-# ONLYOFFICE
+
+### ONLYOFFICE
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffice
 	# set ONLYOFFICE to accept the self-signed certificate and point it to ${MY_IP} instead of localhost
 	# ${HOST_NAME} would work instead if DNS is set up correctly
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice verify_peer_off --value="true"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice DocumentServerUrl --value="https://${MY_IP}/apps/documentserver_community/"
 
-## SERVER SIDE ENCRYPTION 
-## Server-side encryption makes it possible to encrypt files which are uploaded to this server.
-## This comes with limitations like a performance penalty, so enable this only if needed.
+### SERVER SIDE ENCRYPTION 
+### Server-side encryption makes it possible to encrypt files which are uploaded to this server.
+### This comes with limitations like a performance penalty, so enable this only if needed.
+
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable encryption
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:enable
 # sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:disable
 
-## Set Nextcloud to run maintenace tasks as a cron job
+### Set Nextcloud to run maintenace tasks as a cron job
+
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
 crontab -u www ${PWD}/includes/www-crontab
+### Remove comment below if you want to run the first maintenance task before login.
 # sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
 
-#####
-#
-# All done!
-# Print copy of reference info to console
-#
-#####
+### All done!
+### Print copy of reference info to console
 
 clear
 echo "Installation Complete!"
