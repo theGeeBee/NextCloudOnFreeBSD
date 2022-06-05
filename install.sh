@@ -1,8 +1,12 @@
 #!/bin/sh
+
 ###
-# Install Nextcloud on FreeBSD
-# Tested on FreeBSD 13.1
-# Last update: 2022-06-01
+# Install Nextcloud on FreeBSD (and derivatives)
+# Tested on:
+# ----------
+# 1. FreeBSD 13.1
+# 2. HardenedBSD 13-STABLE (Build 470)
+# Last update: 2022-06-3
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 ###
 
@@ -12,41 +16,49 @@ if ! [ $(id -u) = 0 ]; then
    exit 1
 fi
 
-### Configuration (All fields are required)
-### Common settings
+### HardenedBSD Block
 ###
-HOST_NAME="my.nextcloud.server" # Advisory: set to the same as your DNS entry
-MY_IP="10.0.0.10"
-MY_EMAIL="nextcloud-admin@${HOST_NAME}"
-SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
-NEXTCLOUD_VERSION="23" # Some Apps don't work on v24 yet, as of 2022/05/28
+r_uname="`uname -r`"
+hbsd_test="HBSD"
 
-### Settings for Nextcloud, loggings, and openSSL:
+### lib32 test
 ###
-COUNTRY_CODE="XW" # Example: US/UK/CA/AU/DE, etc.
-TIME_ZONE="UTC" # See: https://www.php.net/manual/en/timezones.php
+if [ -d "/usr/lib32" ]
+	then
+		lib32="true"
+	else
+		lib32="false"
+fi
 
-### Nextcloud settings
-###
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD=$(openssl rand -base64 12)
-DATA_DIRECTORY="/mnt/nextcloud_data" ## Please use something like /path/to/zfs/dataset/without/dedup/ - and use the script to create a subdirectory for NC data 
+if test "${r_uname#*$hbsd_test}" != "${r_uname}" # If HBSD is found in uname string
+then
+	hbsd_test="true"
+else 
+	hbsd_test="false"
+fi 
 
-### mySQL setttings
-###
-DB_ROOT_PASSWORD=$(openssl rand -base64 16)
-DB_USERNAME="nextcloud"
-DB_PASSWORD=$(openssl rand -base64 16)
-DB_NAME="nextcloud" 
+### Install `pkg`, update repository, upgrade existing packages
+echo "Installing pkg and updating repositories"
+pkg bootstrap -y
+pkg update
+pkg upgrade -y
 
 ### Install required packages and then start services
 ### Load required kernel modules
 
-kldload linux.ko linux64.ko linprocfs.ko linsysfs.ko
+if ($hbsd_test == "false" && $lib32 == "true")
+	then
+		kldload linux.ko linux64.ko linprocfs.ko linsysfs.ko
+fi
+	
 
 ### Install required packages
 
 cat includes/requirements.txt | xargs pkg install -y
+
+### Update virus definitions (We run this before enabling ClamAV Daemon to prevent errors)
+
+freshclam
 
 ### Enable services
 
@@ -58,10 +70,6 @@ sysrc apache24_enable="YES"
 sysrc mysql_enable="YES"
 sysrc php_fpm_enable="YES"
 
-### Update virus definitions (We run this before enabling ClamAV Daemon to prevent errors)
-
-freshclam
-
 ### Start services
 
 service linux start
@@ -70,6 +78,34 @@ service clamav-clamd onestart
 apachectl start
 service mysql-server start
 service php-fpm start
+
+### Configuration (All fields are required)
+### Common settings
+###
+MY_USERNAME="nextcloud-admin" # This is a username that will be used for the Nextcloud Web UI
+HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entry
+MY_IP="192.168.6.1"
+MY_EMAIL="${MY_USERNAME}@${HOST_NAME}"
+SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
+NEXTCLOUD_VERSION="23" # Some Apps don't work on v24 yet, as of 2022/05/28
+
+### Settings for Nextcloud, logging, and openSSL:
+###
+COUNTRY_CODE="ZA" # Example: US/UK/CA/AU/DE, etc.
+TIME_ZONE="Africa/Johannesburg" # See: https://www.php.net/manual/en/timezones.php
+
+### Nextcloud settings
+###
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD=$(openssl rand -base64 12)
+DATA_DIRECTORY="/mnt/nextcloud_data" ## Please use something like /path/to/zfs/dataset/ - and use the script to create a subdirectory for NC data 
+
+### mySQL setttings
+###
+DB_ROOT_PASSWORD=$(openssl rand -base64 16)
+DB_USERNAME="nextcloud"
+DB_PASSWORD=$(openssl rand -base64 16)
+DB_NAME="nextcloud" 
 
 ### Download and verify Nextcloud
 
@@ -96,13 +132,16 @@ chown -R www:www /usr/local/www/apache24/data/nextcloud
 
 cp -f "${PWD}"/includes/php.ini /usr/local/etc/php.ini
 sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" /usr/local/etc/php.ini
+if $hbsd_test == "true"
+	then
+		sed -i '' "s|pcre.jit=1|pcre.jit=0|" /usr/local/etc/php.ini
+	fi
 
 cp -f "${PWD}"/includes/www.conf /usr/local/etc/php-fpm.d/
 
 cp -f "${PWD}"/includes/httpd.conf /usr/local/etc/apache24/
 sed -i '' "s|MY_IP|${MY_IP}|" /usr/local/etc/apache24/httpd.conf
 cp -f "${PWD}"/includes/nextcloud.conf /usr/local/etc/apache24/Includes/
-cp -f "${PWD}"/includes/002_headers.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/030_php-fpm.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
 
@@ -111,12 +150,12 @@ cat "${PWD}"/includes/fstab >> /etc/fstab
 
 ### Create self-signed SSL certificate
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
-openssl req -x509 -nodes -days 3650 -sha512 -subj $OPENSSL_REQUEST -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
+openssl req -x509 -nodes -days 3652 -sha512 -subj $OPENSSL_REQUEST -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
 
 ### Restart Services for modified configuration to take effect
 
 service php-fpm restart
-apachectl graceful
+apachectl restart
 
 ### Create mySQL database
 ### Secure database, set mysql root password, create Nextcloud DB, user, and password
@@ -129,8 +168,9 @@ mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('loc
 mysql -u root -e "DROP DATABASE IF EXISTS test;"
 mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
 mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
-cp -f ${PWD}/includes/my.cnf /root/.my.cnf
-sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" /root/.my.cnf
+### The next two lines allow `root` to login to mysql> without a password
+cp -f ${PWD}/includes/my.cnf /root/.my.cnf 
+sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" /root/.my.cnf 
 
 ### Create reference file
 
