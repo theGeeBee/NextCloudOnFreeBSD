@@ -68,6 +68,8 @@ service linux start
 ### Document Server Community Edition
 
 echo "Installing Document Server for Nextcloud."
+### ONLYOFFICE
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable onlyoffice
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
 
 	# set ONLYOFFICE to accept the self-signed certificate and point it to ${MY_IP} instead of localhost

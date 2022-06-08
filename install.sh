@@ -251,7 +251,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_ant
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="delete"
 
 ### ONLYOFFICE
-# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install --keep-disabled onlyoffice
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install --keep-disabled onlyoffice
 
 ### SERVER SIDE ENCRYPTION 
 ### Server-side encryption makes it possible to encrypt files which are uploaded to this server.
