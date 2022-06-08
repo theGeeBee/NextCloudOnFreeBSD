@@ -251,7 +251,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_ant
 	### set correct value for path on FreeBSD and set default action
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_mode --value="socket"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="delete"
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="only_log"
 
 ### ONLYOFFICE
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install --keep-disabled onlyoffice
