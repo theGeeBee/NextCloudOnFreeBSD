@@ -198,8 +198,11 @@ chown www:www "${DATA_DIRECTORY}"
 
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-primary-keys
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-indices
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-columns
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:convert-filecache-bigint --no-interaction
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:mimetype:update-db
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logtimezone --value="${TIME_ZONE}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set default_phone_region --value="${COUNTRY_CODE}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log_type --value="file"

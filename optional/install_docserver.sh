@@ -4,7 +4,7 @@
 # Install Document Server add-on for NextCloud
 # Tested on:
 # ----------
-# 1. FreeBSD 13.1
+# 1. FreeBSD 12+
 # Last update: 2022-06-07
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 ###
