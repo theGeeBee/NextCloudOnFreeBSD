@@ -4,80 +4,13 @@
 # Install Nextcloud on FreeBSD (and derivatives)
 # Tested on:
 # ----------
-# 1. FreeBSD 13.1
-# 2. HardenedBSD 13-STABLE (Build 470)
-# Last update: 2022-06-3
+# 1. FreeBSD 12+
+# 2. HardenedBSD 13-STABLE (Build 470+)
+# 3. TrueNAS CORE 13 (in base jail)
+# Last update: 2022-06-07
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 ###
 
-### Check for root privileges
-if ! [ $(id -u) = 0 ]; then
-   echo "This script must be run with root privileges."
-   exit 1
-fi
-
-### HardenedBSD Block
-###
-r_uname="`uname -r`"
-hbsd_test="HBSD"
-
-### lib32 test
-###
-if [ -d "/usr/lib32" ]
-	then
-		lib32="true"
-	else
-		lib32="false"
-fi
-
-if test "${r_uname#*$hbsd_test}" != "${r_uname}" # If HBSD is found in uname string
-then
-	hbsd_test="true"
-else 
-	hbsd_test="false"
-fi 
-
-### Install `pkg`, update repository, upgrade existing packages
-echo "Installing pkg and updating repositories"
-pkg bootstrap -y
-pkg update
-pkg upgrade -y
-
-### Install required packages and then start services
-### Load required kernel modules
-
-if ($hbsd_test == "false" && $lib32 == "true")
-	then
-		kldload linux.ko linux64.ko linprocfs.ko linsysfs.ko
-fi
-	
-
-### Install required packages
-
-cat includes/requirements.txt | xargs pkg install -y
-
-### Update virus definitions (We run this before enabling ClamAV Daemon to prevent errors)
-
-freshclam
-
-### Enable services
-
-sysrc linux_enable="YES"
-sysrc sendmail_enable="YES"
-sysrc clamav_clamd_enable="YES"
-sysrc clamav_freshclam_enable="YES"
-sysrc apache24_enable="YES"
-sysrc mysql_enable="YES"
-sysrc php_fpm_enable="YES"
-
-### Start services
-
-service linux start
-service sendmail start
-service clamav-clamd onestart
-apachectl start
-service mysql-server start
-service php-fpm start
 
 ### Configuration (All fields are required)
 ### Common settings
@@ -87,7 +20,7 @@ HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entr
 MY_IP="192.168.6.1"
 MY_EMAIL="${MY_USERNAME}@${HOST_NAME}"
 SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
-NEXTCLOUD_VERSION="23" # Some Apps don't work on v24 yet, as of 2022/05/28
+NEXTCLOUD_VERSION="24" # The integrated document_server app does not yet work on v24+
 
 ### Settings for Nextcloud, logging, and openSSL:
 ###
@@ -106,6 +39,62 @@ DB_ROOT_PASSWORD=$(openssl rand -base64 16)
 DB_USERNAME="nextcloud"
 DB_PASSWORD=$(openssl rand -base64 16)
 DB_NAME="nextcloud" 
+
+
+#############################################
+###             END OF CONFIG             ###
+#############################################
+
+
+### Check for root privileges
+if ! [ $(id -u) = 0 ]; then
+   echo "This script must be run with root privileges."
+   echo "Type in \`su\` to switch to root and remain in this directory."
+   exit 1
+fi
+
+### HardenedBSD Check (if there's a better way, please let me know!)
+###
+r_uname="`uname -r`"
+hbsd_test="HBSD"
+
+if test "${r_uname#*$hbsd_test}" != "${r_uname}" # If HBSD is found in uname string
+then
+	hbsd_test="true"
+else 
+	hbsd_test="false"
+fi 
+
+### Install `pkg`, update repository, upgrade existing packages
+echo "Installing pkg and updating repositories"
+pkg bootstrap -y
+pkg update
+pkg upgrade -y
+
+### Install required packages
+
+cat includes/requirements.txt | xargs pkg install -y
+
+### Update virus definitions (We run this before enabling ClamAV Daemon to prevent errors)
+
+freshclam
+
+### Enable services
+
+sysrc sendmail_enable="YES"
+sysrc clamav_clamd_enable="YES"
+sysrc clamav_freshclam_enable="YES"
+sysrc apache24_enable="YES"
+sysrc mysql_enable="YES"
+sysrc php_fpm_enable="YES"
+
+### Start services
+
+service sendmail start
+service clamav-clamd onestart
+apachectl start
+service mysql-server start
+service php-fpm start
 
 ### Download and verify Nextcloud
 
@@ -128,10 +117,12 @@ fi
 tar xjf /tmp/"${FILE}" -C /usr/local/www/apache24/data/
 chown -R www:www /usr/local/www/apache24/data/nextcloud
 
-### Copy and edit pre-written config files
+### Backup original config files, then
+### Copy pre-writting config files and edit in place
 
 cp -f "${PWD}"/includes/php.ini /usr/local/etc/php.ini
 sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" /usr/local/etc/php.ini
+### Disable PHP Just-in-Time compilation for HardenedBSD support
 if $hbsd_test == "true"
 	then
 		sed -i '' "s|pcre.jit=1|pcre.jit=0|" /usr/local/etc/php.ini
@@ -145,10 +136,8 @@ cp -f "${PWD}"/includes/nextcloud.conf /usr/local/etc/apache24/Includes/
 cp -f "${PWD}"/includes/030_php-fpm.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
 
-### Set linux compatibility mount points
-cat "${PWD}"/includes/fstab >> /etc/fstab
-
 ### Create self-signed SSL certificate
+
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
 openssl req -x509 -nodes -days 3652 -sha512 -subj $OPENSSL_REQUEST -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
 
@@ -261,18 +250,8 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_ant
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="delete"
 
-### Document Server Community Edition
-
-clear
-echo "Installing Document Server + ONLYOFFICE, this will take longer than the other Apps..."
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install documentserver_community
-
 ### ONLYOFFICE
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install onlyoffice
-	# set ONLYOFFICE to accept the self-signed certificate and point it to ${MY_IP} instead of localhost
-	# ${HOST_NAME} would work instead if DNS is set up correctly
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice verify_peer_off --value="true"
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set onlyoffice DocumentServerUrl --value="https://${MY_IP}/apps/documentserver_community/"
+# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install --keep-disabled onlyoffice
 
 ### SERVER SIDE ENCRYPTION 
 ### Server-side encryption makes it possible to encrypt files which are uploaded to this server.

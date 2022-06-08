@@ -5,7 +5,6 @@ nano
 vim
 ffmpeg
 sendmail
-linux_base-c7
 clamav
 apache24
 mysql80-server
