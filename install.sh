@@ -16,16 +16,16 @@
 ### Common settings
 ###
 MY_USERNAME="nextcloud-admin" # This is a username that will be used for the Nextcloud Web UI
-HOST_NAME="nextcloud.zion.internal" # Advisory: set to the same as your DNS entry
-MY_IP="192.168.6.1"
+HOST_NAME="nextcloud.yourdomain.com" # Advisory: set to the same as your DNS entry
+MY_IP="10.0.0.10"
 MY_EMAIL="${MY_USERNAME}@${HOST_NAME}"
 SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
 NEXTCLOUD_VERSION="24" # The integrated document_server app does not yet work on v24+
 
 ### Settings for Nextcloud, logging, and openSSL:
 ###
-COUNTRY_CODE="ZA" # Example: US/UK/CA/AU/DE, etc.
-TIME_ZONE="Africa/Johannesburg" # See: https://www.php.net/manual/en/timezones.php
+COUNTRY_CODE="XW" # Example: US/UK/CA/AU/DE, etc.
+TIME_ZONE="UTC" # See: https://www.php.net/manual/en/timezones.php
 
 ### Nextcloud settings
 ###
