@@ -1,5 +1,6 @@
 # NextCloud on FreeBSD
 Script to automate installation of Nextcloud on: FreeBSD12+, Truenas CORE 12 + (in a base jail), HardenedBSD13
+This is very much a work in progress, this script will change constantly as I get everything I want integrated in the best possible way.
 
 ## Instructions
 
@@ -20,9 +21,9 @@ Script to automate installation of Nextcloud on: FreeBSD12+, Truenas CORE 12 + (
 * MySQL 8.0
 * PHP 8.0
 * ClamAV
-* Nextcloud 24
+* Nextcloud 23
 
-*Note: **Nextcloud 24** does not yet support the integrated Community Document Server, please install v23 if you intend to use the plugin version of the Community Document Server*
+*Note: **Nextcloud 24** does not yet support the integrated Community Document Server,*
 *For full list, see `requirements.txt`*
 
 ------------
@@ -32,7 +33,8 @@ Script to automate installation of Nextcloud on: FreeBSD12+, Truenas CORE 12 + (
 * HTTP/2
 * SSL Enabled, TLS1.3 only
 * HSTS Enabled
-* PHP Memory Caching APCu
+* PHP with APCu enabled
+* Redis installed and enabled
 
 ### NextCloud Apps Installed/Activated
 

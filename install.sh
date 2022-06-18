@@ -20,7 +20,7 @@ HOST_NAME="nextcloud.yourdomain.com" # Advisory: set to the same as your DNS ent
 MY_IP="10.0.0.10"
 MY_EMAIL="${MY_USERNAME}@${HOST_NAME}"
 SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
-NEXTCLOUD_VERSION="24" # The integrated document_server app does not yet work on v24+
+NEXTCLOUD_VERSION="23" # The integrated document_server app does not yet work on v24+
 
 ### Settings for Nextcloud, logging, and openSSL:
 ###
@@ -87,11 +87,13 @@ sysrc clamav_freshclam_enable="YES"
 sysrc apache24_enable="YES"
 sysrc mysql_enable="YES"
 sysrc php_fpm_enable="YES"
+sysrc redis_enable="YES"
 
 ### Start services
 
 service sendmail start
 service clamav-clamd onestart
+service redis start
 apachectl start
 service mysql-server start
 service php-fpm start
@@ -127,14 +129,16 @@ if $hbsd_test == "true"
 	then
 		sed -i '' "s|pcre.jit=1|pcre.jit=0|" /usr/local/etc/php.ini
 	fi
-
 cp -f "${PWD}"/includes/www.conf /usr/local/etc/php-fpm.d/
-
+cp -f "${PWD}"includes/redis.conf /usr/local/etc/redis.conf
 cp -f "${PWD}"/includes/httpd.conf /usr/local/etc/apache24/
 sed -i '' "s|MY_IP|${MY_IP}|" /usr/local/etc/apache24/httpd.conf
 cp -f "${PWD}"/includes/nextcloud.conf /usr/local/etc/apache24/Includes/
 cp -f "${PWD}"/includes/030_php-fpm.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
+
+### Add user `www` to group `redis` to grant access to `redis.sock`
+pw usermod www -G redis
 
 ### Create self-signed SSL certificate
 
@@ -209,7 +213,12 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set filelocking.enabled --value=true
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.distributed --value="\OC\Memcache\Redis"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.locking --value="\OC\Memcache\Redis"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set redis host --value="/var/run/redis/redis.sock"
+sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set redis port --value=0 --type=integer
 ### Uncomment the following lines only if DNS works properly on your network.
 #sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
@@ -252,6 +261,7 @@ sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_ant
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_mode --value="socket"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
 	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="only_log"
+	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set activity notify_notification_virus_detected --value="1"
 
 ### ONLYOFFICE
 sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install --keep-disabled onlyoffice

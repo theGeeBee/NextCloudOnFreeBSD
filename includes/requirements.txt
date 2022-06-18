@@ -8,6 +8,7 @@ sendmail
 clamav
 apache24
 mysql80-server
+redis
 samba412
 php80
 php80-bcmath
@@ -31,6 +32,7 @@ php80-pdo
 php80-pdo_mysql
 php80-pecl-APCu
 php80-pecl-imagick-im7
+php80-pecl-redis
 php80-posix
 php80-session
 php80-simplexml
