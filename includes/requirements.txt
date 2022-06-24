@@ -33,6 +33,7 @@ php81-pdo_mysql
 php81-pecl-APCu
 php81-pecl-imagick-im7
 php81-pecl-redis
+php81-pecl-smbclient
 php81-posix
 php81-session
 php81-simplexml

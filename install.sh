@@ -7,7 +7,7 @@
 # 1. FreeBSD 12.3 13.0 13.1
 # 2. HardenedBSD 13-STABLE (Build 470+)
 # 3. TrueNAS CORE 13 (in base jail)
-# Last update: 2022-06-19
+# Last update: 2022-06-24
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 ###
 
@@ -25,6 +25,7 @@ MY_IP="10.0.0.10"
 MY_EMAIL="${MY_USERNAME}@${HOST_NAME}"
 SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
 NEXTCLOUD_VERSION="24" # The integrated document_server app does not yet work on v24+
+WWW_DIR="${WWW_DIR}"
 
 ### Settings for Nextcloud, logging, and openSSL:
 ###
@@ -142,8 +143,8 @@ fi
 
 ### Extract Nextcloud and give `www` ownership of the directory
 ###
-tar xjf /tmp/"${FILE}" -C /usr/local/www/apache24/data/
-chown -R www:www /usr/local/www/apache24/data/nextcloud
+tar xjf /tmp/"${FILE}" -C ${WWW_DIR}/
+chown -R www:www ${WWW_DIR}/nextcloud
 
 ### Create self-signed SSL certificate
 ###
@@ -225,91 +226,91 @@ EOL
 
 ### CLI installation and configuration of Nextcloud
 ###
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-primary-keys
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-indices
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:add-missing-columns
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ db:convert-filecache-bigint --no-interaction
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:mimetype:update-db
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logtimezone --value="${TIME_ZONE}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set default_phone_region --value="${COUNTRY_CODE}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set log_type --value="file"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set loglevel --value="2"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set logrotate_size --value="104847600"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set filelocking.enabled --value=true
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set redis host --value="/var/run/redis/redis.sock"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set redis port --value=0 --type=integer
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.distributed --value="\OC\Memcache\Redis"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set memcache.locking --value="\OC\Memcache\Redis"
+sudo -u www php ${WWW_DIR}/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mysql.utf8mb4 --type boolean --value="true"
+sudo -u www php ${WWW_DIR}/nextcloud/occ db:add-missing-primary-keys
+sudo -u www php ${WWW_DIR}/nextcloud/occ db:add-missing-indices
+sudo -u www php ${WWW_DIR}/nextcloud/occ db:add-missing-columns
+sudo -u www php ${WWW_DIR}/nextcloud/occ db:convert-filecache-bigint --no-interaction
+sudo -u www php ${WWW_DIR}/nextcloud/occ maintenance:mimetype:update-db
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set logtimezone --value="${TIME_ZONE}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set default_phone_region --value="${COUNTRY_CODE}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set log_type --value="file"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set logfile --value="/var/log/nextcloud/nextcloud.log"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set loglevel --value="2"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set logrotate_size --value="104847600"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set filelocking.enabled --value=true
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set memcache.local --value="\OC\Memcache\APCu"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set redis host --value="/var/run/redis/redis.sock"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set redis port --value=0 --type=integer
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set memcache.distributed --value="\OC\Memcache\Redis"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set memcache.locking --value="\OC\Memcache\Redis"
 ### Uncomment the following lines only if DNS works properly on your network.
-#sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set overwriteprotocol --value="https"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ maintenance:update:htaccess
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 0 --value="${MY_IP}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
+#sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwriteprotocol --value="https"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
+sudo -u www php ${WWW_DIR}/nextcloud/occ maintenance:update:htaccess
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set trusted_domains 0 --value="${MY_IP}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
 
 ### Set Nextcloud to use sendmail (you can change this later in the GUI)
 ###
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
 
 ### Enable external storage support (Example: mount a SMB share in Nextcloud)
 ### Users are allowed to mount external storage, but can be disabled under Settings -> Admin -> External Storage
 ###
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable files_external
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_external allow_user_mounting --value="yes"
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:enable files_external
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set files_external allow_user_mounting --value="yes"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
 
 ### Install Nextcloud Apps
 ### Featured Apps (alphabetical)
 ###
 clear
 echo "Nextcloud is now installed, installing recommended Apps..."
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install calendar
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install contacts
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install deck
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install mail
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install notes
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install spreed # Nextcloud Talk
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install tasks
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install calendar
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install contacts
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install deck
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install mail
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install notes
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install spreed # Nextcloud Talk
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install tasks
 
 ### Antivirus for Files
 ###
 clear
 echo "Now installing and configuring Antivirus for File using ClamAV..."
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install files_antivirus
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install files_antivirus
 	### set correct value for path on FreeBSD and set default action
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_mode --value="socket"
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set files_antivirus av_infected_action --value="only_log"
-	sudo -u www php /usr/local/www/apache24/data/nextcloud/occ config:app:set activity notify_notification_virus_detected --value="1"
+	sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set files_antivirus av_mode --value="socket"
+	sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
+	sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set files_antivirus av_stream_max_length --value"104857600"
+	sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set files_antivirus av_infected_action --value="only_log"
+	sudo -u www php ${WWW_DIR}/nextcloud/occ config:app:set activity notify_notification_virus_detected --value="1"
 
 ### ONLYOFFICE
 ###
 clear
 echo "Now installing OnlyOffice (will be disabled by default)..."
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:install --keep-disabled onlyoffice
+sudo -u www php ${WWW_DIR}/nextcloud/occ app:install --keep-disabled onlyoffice
 
 ### SERVER SIDE ENCRYPTION 
 ### Server-side encryption makes it possible to encrypt files which are uploaded to this server.
 ### This comes with limitations like a performance penalty, so enable this only if needed.
 ###
-# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ app:enable encryption
-# sudo -u www php /usr/local/www/apache24/data/nextcloud/occ encryption:enable
+# sudo -u www php ${WWW_DIR}/nextcloud/occ app:enable encryption
+# sudo -u www php ${WWW_DIR}/nextcloud/occ encryption:enable
 
 ### Set Nextcloud to run maintenace tasks as a cron job
 ###
-sudo -u www php /usr/local/www/apache24/data/nextcloud/occ background:cron
+sudo -u www php ${WWW_DIR}/nextcloud/occ background:cron
 crontab -u www ${PWD}/includes/www-crontab
-### Comment below if you do not want to run maintenance task before first login.
-#sudo -u www php -f /usr/local/www/apache24/data/nextcloud/cron.php
+# sudo -u www /usr/local/bin/php -f ${WWW_DIR}/nextcloud/cron.php &>/dev/null &
 
 ### All done!
 ### Print copy of reference info to console
