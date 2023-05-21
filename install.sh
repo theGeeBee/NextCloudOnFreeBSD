@@ -156,7 +156,7 @@ if $hbsd_test == "true"
 cp -f "${PWD}"/includes/www.conf /usr/local/etc/php-fpm.d/
 cp -f "${PWD}"/includes/redis.conf /usr/local/etc/redis.conf
 cp -f "${PWD}"/includes/httpd.conf /usr/local/etc/apache24/
-sed -i '' "s|MY_IP|${MY_IP}|" /usr/local/etc/apache24/httpd.conf
+sed -i '' "s|IP_ADDRES|${IP_ADDRESS}|" /usr/local/etc/apache24/httpd.conf
 cp -f "${PWD}"/includes/nextcloud.conf /usr/local/etc/apache24/Includes/
 cp -f "${PWD}"/includes/030_php-fpm.conf /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}"/includes/php-fpm.conf /usr/local/etc/
@@ -217,11 +217,11 @@ sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set memcache.distributed 
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set memcache.locking --value="\OC\Memcache\Redis"
 ### Uncomment the following lines only if DNS works properly on your network.
 #sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwritehost --value="${HOST_NAME}"
-sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwrite.cli.url --value="https://${MY_IP}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwrite.cli.url --value="https://${IP_ADDRESS}"
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set overwriteprotocol --value="https"
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set htaccess.RewriteBase --value="/"
 sudo -u www php ${WWW_DIR}/nextcloud/occ maintenance:update:htaccess
-sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set trusted_domains 0 --value="${MY_IP}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set trusted_domains 0 --value="${IP_ADDRESS}"
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set trusted_domains 1 --value="${HOST_NAME}"
 
 ### Set Nextcloud to use sendmail (you can change this later in the GUI)
@@ -229,7 +229,7 @@ sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set trusted_domains 1 --v
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_smtpmode --value="sendmail"
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_sendmailmode --value="smtp"
 sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_domain --value="${HOST_NAME}"
-sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_from_address --value="${SERVER_EMAIL}"
+sudo -u www php ${WWW_DIR}/nextcloud/occ config:system:set mail_from_address --value="${EMAIL_ADDRESS}"
 
 ### Enable external storage support (Example: mount a SMB share in Nextcloud)
 ### Users are allowed to mount external storage, but can be disabled under Settings -> Admin -> External Storage
