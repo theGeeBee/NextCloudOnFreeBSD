@@ -19,12 +19,9 @@ This is very much a work in progress, this script will change constantly as I ge
 
 * Apache 2.4
 * MySQL 8.0
-* PHP 8.0
+* PHP 8.1
 * ClamAV
-* Nextcloud 23
-
-*Note: **Nextcloud 24** does not yet support the integrated Community Document Server,*
-*For full list, see `requirements.txt`*
+* Nextcloud 26
 
 ------------
 
@@ -49,6 +46,6 @@ This is very much a work in progress, this script will change constantly as I ge
 * External storage support (including `samba` and `ftp`)
 * OnlyOffice is disabled by default.
 
-### Optional Scripts
+### Optional Scripts (this doesn't work, fix in progress)
 
 * `install_docserver.sh` will install the Community Document Server plugin on Nextcloud (FreeBSD only) and configure Onlyoffice accordingly.
