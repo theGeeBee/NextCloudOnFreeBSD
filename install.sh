@@ -2,12 +2,8 @@
 
 ###
 # Install Nextcloud on FreeBSD (and derivatives)
-# Tested on:
-# ----------
-# 1. FreeBSD 12.3 13.0 13.1
-# 2. HardenedBSD 13-STABLE (Build 470+)
-# 3. TrueNAS CORE 13 (in base jail)
-# Last update: 2022-06-24
+#
+# Last update: 2023-05-21
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 ###
 
@@ -19,32 +15,30 @@
 
 ### Common settings
 ###
-MY_USERNAME="nextcloud-admin" # This is a username that will be used for the Nextcloud Web UI
-HOST_NAME="nextcloud.my.domain" # Advisory: set to the same as your DNS entry
-MY_IP="10.0.0.10"
-MY_EMAIL="${MY_USERNAME}@${HOST_NAME}"
-SERVER_EMAIL="nextcloud-alert" # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
-NEXTCLOUD_VERSION="24" # The integrated document_server app does not yet work on v24+
-WWW_DIR="${WWW_DIR}"
-
-### Settings for Nextcloud, logging, and openSSL:
-###
-COUNTRY_CODE="XW" # Example: US/UK/CA/AU/DE, etc.
-TIME_ZONE="UTC" # See: https://www.php.net/manual/en/timezones.php
+EMAIL_USERNAME="nextcloud-admin"                     # Used for the `ServerAdmin` variable in Apache's httpd.conf
+HOST_NAME="nextcloud.my.network"                     # Set to the same as your DNS entry
+IP_ADDRESS="10.0.0.10"                               #
+EMAIL_ADDRESS="${EMAIL_USERNAME}@${HOST_NAME}"       # Used for the `ServerAdmin` variable in Apache's httpd.conf
+SERVER_EMAIL="nextcloud-alert"                       # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
+NEXTCLOUD_VERSION="26"                               # Tested on v23 and v24
+WWW_DIR="/usr/local/www"                             # NOTE: no trailing /
+SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /
+COUNTRY_CODE="ZA"                                    # Example: US/UK/CA/AU/DE, etc.
+TIME_ZONE="Etc/GMT            "                      # See: https://www.php.net/manual/en/timezones.php
+OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}" # This populates the `-subj` field of the `openssl` request
 
 ### Nextcloud settings
 ###
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD=$(openssl rand -base64 12)
-DATA_DIRECTORY="/mnt/nextcloud_data" ## Please use something like /path/to/zfs/dataset/ - and use the script to create a subdirectory for NC data 
+ADMIN_USERNAME="admin"                      # Username for the Nextcloud Web UI
+ADMIN_PASSWORD="$(openssl rand -base64 12)" # Password for the Nextcloud Web UI
+DATA_DIRECTORY="/mnt/nextcloud_data"        # Please use something like /path/to/zfs/dataset/ - and use the script to create a subdirectory for NC data
 
-### mySQL setttings
+### mySQL setttings (for Nextcloud)
 ###
-DB_ROOT_PASSWORD=$(openssl rand -base64 16)
+DB_ROOT_PASSWORD="$(openssl rand -base64 16)"
 DB_USERNAME="nextcloud"
-DB_PASSWORD=$(openssl rand -base64 16)
-DB_NAME="nextcloud" 
-
+DB_PASSWORD="$(openssl rand -base64 16)"
+DB_NAME="nextcloud"
 
 #############################################
 ###             END OF CONFIG             ###
@@ -53,21 +47,20 @@ DB_NAME="nextcloud"
 
 ### Check for root privileges
 ###
-if ! [ $(id -u) = 0 ]; then
-   echo "This script must be run with root privileges."
-   echo "Type in \`su\` to switch to root and remain in this directory."
-   exit 1
+if ! [ "$(id -u)" = 0 ]; then
+	echo "This script must be run with root privileges."
+	echo "Type in \`su\` to switch to root and remain in this directory."
+	exit 1
 fi
 
-### HardenedBSD Check (if there's a better way, please let me know!)
+### HardenedBSD Check
 ###
-r_uname="`uname -r`"
+r_uname="$(uname -r)"
 hbsd_test="HBSD"
 
-if test "${r_uname#*$hbsd_test}" != "${r_uname}" # If HBSD is found in uname string
-then
+if test "${r_uname#*"$hbsd_test"}" != "${r_uname}"; then # If HBSD is found in uname string
 	hbsd_test="true"
-else 
+else
 	hbsd_test="false"
 fi 
 
@@ -201,29 +194,6 @@ mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
 cp -f ${PWD}/includes/my.cnf /root/.my.cnf 
 sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" /root/.my.cnf 
 
-### Create reference file
-###
-cat >> /root/${HOST_NAME}_reference.txt <<EOL
-Nextcloud installation details:
-===============================
-
-Server address : https://${HOST_NAME} or https://${MY_IP}
-Data directory : ${DATA_DIRECTORY}
-
-Login Information:
-------------------
-Username : ${ADMIN_USERNAME}
-Password : ${ADMIN_PASSWORD}
-
-Database Information:
----------------------
-Database name       : ${DB_NAME}
-Database username   : ${DB_USERNAME}
-Database password   : ${DB_PASSWORD}
-mySQL root password : ${DB_ROOT_PASSWORD}
-
-EOL
-
 ### CLI installation and configuration of Nextcloud
 ###
 sudo -u www php ${WWW_DIR}/nextcloud/occ maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="localhost" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
@@ -312,6 +282,29 @@ sudo -u www php ${WWW_DIR}/nextcloud/occ background:cron
 crontab -u www ${PWD}/includes/www-crontab
 # sudo -u www /usr/local/bin/php -f ${WWW_DIR}/nextcloud/cron.php &>/dev/null &
 
+### Create reference file
+###
+cat >>/root/${HOST_NAME}_reference.txt <<EOL
+Nextcloud installation details:
+===============================
+
+Server address : https://${HOST_NAME} or https://${IP_ADDRESS}
+Data directory : ${DATA_DIRECTORY}
+
+Nextcloud GUI Login:
+--------------------
+Username : ${ADMIN_USERNAME}
+Password : ${ADMIN_PASSWORD}
+
+MySQL Information:
+------------------
+Database name       : ${DB_NAME}
+Database username   : ${DB_USERNAME}
+Database password   : ${DB_PASSWORD}
+mySQL root password : ${DB_ROOT_PASSWORD}
+
+EOL
+
 ### All done!
 ### Print copy of reference info to console
 ###
@@ -320,3 +313,4 @@ echo "Installation Complete!"
 echo ""
 cat /root/${HOST_NAME}_reference.txt
 echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
+
