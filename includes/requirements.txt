@@ -1,6 +1,7 @@
 sudo
-gnupg
+curl
 git
+gnupg
 nano
 vim
 ffmpeg
@@ -9,7 +10,7 @@ clamav
 apache24
 mysql80-server
 redis
-samba412
+samba413
 php81
 php81-bcmath
 php81-bz2
@@ -37,6 +38,7 @@ php81-pecl-smbclient
 php81-posix
 php81-session
 php81-simplexml
+php81-sysvsem
 php81-xml
 php81-xmlreader
 php81-xmlwriter
