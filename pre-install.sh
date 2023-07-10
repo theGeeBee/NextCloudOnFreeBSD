@@ -1,18 +1,19 @@
 #!/bin/sh
 
-### Check for root privileges
+# Check for root privileges
 if ! [ "$(id -u)" = 0 ]; then
    echo "This script must be run with root privileges."
    exit 1
 fi
 
-### Create Boot Environment
-###
+ip_address=$(ifconfig | sed -n '/.inet /{s///;s/ .*//;p;}' | head -1)
+sed -i'' -e "s|IP_ADDRESS|${ip_address}|" ./nextcloud.conf
+
+# Create Boot Environment
 echo "Creating Boot Environment for Nextcloud"
 bectl create nextcloud
 bectl activate nextcloud
-
-### Reboot the system
+# Reboot the system
 echo "
 Next steps:
 -----------
