@@ -191,6 +191,8 @@ sudo -u www php "${WWW_DIR}/nextcloud/occ" config:system:set mail_smtpmode --val
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:system:set mail_sendmailmode --value="smtp"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:system:set mail_domain --value="${HOST_NAME}"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:system:set mail_from_address --value="${EMAIL_ADDRESS}"
+# Disable contactsinteraction because the behaviour is unwanted, and confusing
+sudo -u www php "${WWW_DIR}/nextcloud/occ" app:disable contactsinteraction
 # Enable external storage support (Example: mount a SMB share in Nextcloud).
 # Users are not allowed to mount external storage, but can be allowed under Settings -> Admin -> External Storage
 sudo -u www php "${WWW_DIR}/nextcloud/occ" app:enable files_external
@@ -216,7 +218,7 @@ sudo -u www php "${WWW_DIR}/nextcloud/occ" app:install tasks
 clear
 echo "Now installing and configuring Antivirus for File using ClamAV..."
 sudo -u www php "${WWW_DIR}/nextcloud/occ" app:install files_antivirus
-### set correct value for path on FreeBSD and set defaulmySQLt action
+### set correct value for path on FreeBSD and set default action
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_mode --value="socket"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_stream_max_length --value"104857600"
