@@ -103,16 +103,16 @@ openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa
 #
 # Copy pre-writting config files and edit in place
 #
-sed -i'' -e "s|IP_ADDRES|${IP_ADDRESS}|" "${PWD}/inclues/httpd.conf"
-sed -i'' -e "s|WWW_DIR|${WWW_DIR}|" "${PWD}/inclues/httpd.conf"
-sed -i'' -e "s|WWW_DIR|${WWW_DIR}|" "${PWD}/inclues/nextcloud.conf"
-sed -i'' -e "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/inclues/php.ini"
+sed -i '' "s|IP_ADDRES|${IP_ADDRESS}|" "${PWD}/includes/httpd.conf"
+sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/httpd.conf"
+sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/nextcloud.conf"
+sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/includes/php.ini"
 # Disable PHP Just-in-Time compilation for HardenedBSD support
 if [ "$hbsd_test" ]
 	then
-		sed -i'' -e "s|pcre.jit=1|pcre.jit=0|" "${PWD}/inclues/php.ini"
-		sed -i'' -e "s|opcache.jit = 1255|opcache.jit = 0|" "${PWD}/inclues/php.ini"
-		sed -i'' -e "s|opcache.jit_buffer_size = 128M|opcache.jit_buffer_size = 0|" "${PWD}/inclues/php.ini"
+		sed -i '' "s|pcre.jit=1|pcre.jit=0|" "${PWD}/inclues/php.ini"
+		sed -i '' "s|opcache.jit = 1255|opcache.jit = 0|" "${PWD}/inclues/php.ini"
+		sed -i '' "s|opcache.jit_buffer_size = 128M|opcache.jit_buffer_size = 0|" "${PWD}/inclues/php.ini"
 	fi
 cp -f "${PWD}/includes/httpd.conf" /usr/local/etc/apache24/
 cp -f "${PWD}/includes/php.ini" /usr/local/etc/php.ini
@@ -142,20 +142,19 @@ chown www:www "${DATA_DIRECTORY}"
 #
 # Create Nextcloud database, secure database, set MariaDB root password, create Nextcloud DB, user, and password
 #
-mariadb -u root <<EOF
-DELETE FROM mysql.user WHERE User='';
-DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
-DROP DATABASE IF EXISTS test;
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
-CREATE DATABASE ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
-GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USERNAME}'@'localhost';
-FLUSH PRIVILEGES;
-EOF
+mariadb -u root -e "DELETE FROM mysql.user WHERE User='';"
+mariadb -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+mariadb -u root -e "DROP DATABASE IF EXISTS test;"
+mariadb -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+mariadb -u root -e "CREATE DATABASE ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+mariadb -u root -e "CREATE USER '${DB_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+mariadb -u root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USERNAME}'@'localhost';"
+mariadb -u root -e "FLUSH PRIVILEGES;"
+
 mariadb-admin --user=root password "${DB_ROOT_PASSWORD}" reload
 
 # The next two lines allow `root` to login to mysql> without a password
-sed -i'' -e "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" "${PWD}/includes/root_my.cnf"
+sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" "${PWD}/includes/root_my.cnf"
 cp -f "${PWD}/includes/root_my.cnf" /root/.my.cnf 
 
 #
@@ -243,7 +242,7 @@ sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set activity notify_notifi
 # sudo -u www php "${WWW_DIR}/nextcloud/occ" encryption:enable
 
 # Set Nextcloud to run maintenace tasks as a cron job
-sed -i'' -e "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/www-crontab"
+sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/www-crontab"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" background:cron
 crontab -u www "${PWD}/includes/www-crontab"
 # sudo -u www /usr/local/bin/php -f "${WWW_DIR}/nextcloud/cron.php" &>/dev/null &
