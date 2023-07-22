@@ -1,5 +1,5 @@
 # NextCloud on FreeBSD
-Script to automate installation of Nextcloud on: FreeBSD12+, Truenas CORE 12 + (in a base jail), HardenedBSD13
+Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
 This is very much a work in progress, this script will change constantly as I get everything I want integrated in the best possible way.
 
 ## Instructions
@@ -18,10 +18,10 @@ This is very much a work in progress, this script will change constantly as I ge
 **Installs the following:**
 
 * Apache 2.4
-* MySQL 8.0
-* PHP 8.1
+* MariaDB 10.6
+* PHP 8.2
 * ClamAV
-* Nextcloud 26
+* Nextcloud 27
 
 ------------
 
@@ -44,8 +44,4 @@ This is very much a work in progress, this script will change constantly as I ge
 * Nextcloud Talk
 * Tasks
 * External storage support (including `samba` and `ftp`)
-* OnlyOffice is disabled by default.
-
-### Optional Scripts (this doesn't work, fix in progress)
-
-* `install_docserver.sh` will install the Community Document Server plugin on Nextcloud (FreeBSD only) and configure Onlyoffice accordingly.
+  
