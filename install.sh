@@ -43,7 +43,7 @@ pkg update
 pkg upgrade -y
 
 # Install required packages
-pkg install -y "$(cat includes/requirements.txt)"
+cat includes/requirements.txt | xargs pkg install -y
 
 # Update virus definitions
 freshclam
