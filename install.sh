@@ -104,6 +104,8 @@ openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa
 # Copy pre-writting config files and edit in place
 #
 sed -i'' -e "s|IP_ADDRES|${IP_ADDRESS}|" "${PWD}/inclues/httpd.conf"
+sed -i'' -e "s|WWW_DIR|${WWW_DIR}|" "${PWD}/inclues/httpd.conf"
+sed -i'' -e "s|WWW_DIR|${WWW_DIR}|" "${PWD}/inclues/nextcloud.conf"
 sed -i'' -e "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/inclues/php.ini"
 # Disable PHP Just-in-Time compilation for HardenedBSD support
 if [ "$hbsd_test" ]
@@ -241,6 +243,7 @@ sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set activity notify_notifi
 # sudo -u www php "${WWW_DIR}/nextcloud/occ" encryption:enable
 
 # Set Nextcloud to run maintenace tasks as a cron job
+sed -i'' -e "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/www-crontab"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" background:cron
 crontab -u www "${PWD}/includes/www-crontab"
 # sudo -u www /usr/local/bin/php -f "${WWW_DIR}/nextcloud/cron.php" &>/dev/null &
