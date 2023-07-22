@@ -120,7 +120,6 @@ cp -f "${PWD}/includes/www.conf" /usr/local/etc/php-fpm.d/
 cp -f "${PWD}/includes/redis.conf" /usr/local/etc/redis.conf
 cp -f "${PWD}/includes/nextcloud.conf" /usr/local/etc/apache24/Includes/
 cp -f "${PWD}/includes/030_php-fpm.conf" /usr/local/etc/apache24/modules.d/
-cp -f "${PWD}/includes/php-fpm.conf" /usr/local/etc/
 cp -f "${PWD}/includes/my.cnf" /usr/local/etc/mysql/
 
 #
