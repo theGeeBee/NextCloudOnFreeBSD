@@ -17,7 +17,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Load config settings
-. nextcloud.conf
+. install.conf
 
 # Check if HBSD is present in uname string
 hbsd_test=$(uname -a | grep -o 'HBSD')
