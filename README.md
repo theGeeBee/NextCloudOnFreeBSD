@@ -1,6 +1,5 @@
 # NextCloud on FreeBSD
 Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
-This is very much a work in progress, this script will change constantly as I get everything I want integrated in the best possible way.
 
 ## Instructions
 
