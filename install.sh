@@ -163,7 +163,6 @@ cp -f "${PWD}/includes/root_my.cnf" /root/.my.cnf
 # CLI installation and configuration of Nextcloud
 #
 sudo -u www php "${WWW_DIR}/nextcloud/occ" maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="127.0.0.1" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
-#sudo -u www php "${WWW_DIR}/nextcloud/occ" config:system:set mysql.utf8mb4 --type boolean --value="true"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" db:add-missing-primary-keys
 sudo -u www php "${WWW_DIR}/nextcloud/occ" db:add-missing-indices
 sudo -u www php "${WWW_DIR}/nextcloud/occ" db:add-missing-columns
@@ -279,5 +278,4 @@ echo "Installation Complete!"
 echo ""
 cat "/root/${HOST_NAME}_reference.txt"
 echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
-echo "Post install: running the first maintenance task."
 sudo -u www /usr/local/bin/php -f "${WWW_DIR}/nextcloud/cron.php" &
