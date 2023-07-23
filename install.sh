@@ -97,6 +97,8 @@ tar xjf "/tmp/${FILE}" -C "${WWW_DIR}/"
 chown -R www:www "${WWW_DIR}/nextcloud"
 
 # Create self-signed SSL certificate
+mkdir -p "${SSL_DIRECTORY}"
+chown www:www "${SSL_DIRECTORY}"
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
 openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
 
