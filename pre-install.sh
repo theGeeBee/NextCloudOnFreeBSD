@@ -6,14 +6,19 @@ if ! [ "$(id -u)" = 0 ]; then
    exit 1
 fi
 
+#
+# Copy the default config, ready for editing, and pre-populate the IP address
+cp install.conf.sample install.conf
 ip_address=$(ifconfig | sed -n '/.inet /{s///;s/ .*//;p;}' | head -1)
-sed -i'' -e "s|IP_ADDRESS|${ip_address}|" ./nextcloud.conf
+sed -i '' "s|IP_ADDRESS_VALUE|${ip_address}|" install.conf
 
+#
 # Create Boot Environment
+#
 echo "Creating Boot Environment for Nextcloud"
 bectl create nextcloud
 bectl activate nextcloud
-# Reboot the system
+
 echo "
 Next steps:
 -----------

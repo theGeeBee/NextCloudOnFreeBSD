@@ -1,27 +1,30 @@
-### All fields are required
-
-### Common settings
-###
+#
+# All fields are required
+# Common settings
+#
 EMAIL_USERNAME="nextcloud-admin"                     # Used for the `ServerAdmin` variable in Apache's httpd.conf
-HOST_NAME="nextcloud.my.network"                     # Set to the same as your DNS entry
-IP_ADDRESS="10.0.0.10"                               #
-EMAIL_ADDRESS="${EMAIL_USERNAME}@${HOST_NAME}"       # Used for the `ServerAdmin` variable in Apache's httpd.conf
+HOST_NAME="nextcloud.my.network"                     # Set to the same as the entry in your DNS server (See line 184 in install.sh)
+IP_ADDRESS="IP_ADDRESS_VALUE"
 SERVER_EMAIL="nextcloud-alert"                       # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
 NEXTCLOUD_VERSION="27"                               # v27 tested
 WWW_DIR="/usr/local/www"                             # NOTE: no trailing /
 SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /
-COUNTRY_CODE="ZA"                                    # Example: US/UK/CA/AU/DE, etc.
+COUNTRY_CODE="XW"                                    # Example: US/UK/CA/AU/DE, etc.
 TIME_ZONE="Etc/GMT"                                  # See: https://www.php.net/manual/en/timezones.php
+# Do not modify the 2 variables below, they are populated by values above.
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}" # This populates the `-subj` field of the `openssl` request
+EMAIL_ADDRESS="${EMAIL_USERNAME}@${HOST_NAME}"       # Used for the `ServerAdmin` variable in Apache's httpd.conf
 
-### Nextcloud settings
-###
+#
+# Nextcloud settings
+#
 ADMIN_USERNAME="admin"                      # Username for the Nextcloud Web UI
 ADMIN_PASSWORD="$(openssl rand -base64 12)" # Password for the Nextcloud Web UI
 DATA_DIRECTORY="/mnt/nextcloud_data"        # Please use something like /path/to/zfs/dataset/ - and use the script to create a subdirectory for NC data
 
-### mySQL setttings (for Nextcloud)
-###
+#
+# mySQL setttings (for Nextcloud)
+#
 DB_ROOT_PASSWORD="$(openssl rand -base64 16)"
 DB_USERNAME="nextcloud"
 DB_PASSWORD="$(openssl rand -base64 16)"
