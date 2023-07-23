@@ -4,16 +4,16 @@ This is very much a work in progress, this script will change constantly as I ge
 
 ## Instructions
 
-01. Clone repository or download release to your machine and extract
-02. `cd` to folder as root
-03. Open install.sh with your favourite editor
-04. Change the values of variables as required to suite your environment
-05. Save the file
-06. Run `pre_install.sh` as root to create a boot environment before installing, then reboot (or restart jai) before moving on
-07. Run `install.sh` as root
-08. Please be patient while the script runs
-09. Done
-10. Optional: run `optional/install_docserver.sh` if you wish to have the integrated Community Document Server running (FreeBSD only) (Requires OnlyOffice)
+1. Clone repository or download release to your machine and extract
+2. `cd` to folder as root
+3. Run `pre_install.sh` as root to create a boot environment before installing, then reboot (or restart jail) before moving on
+5. Open `install.conf` with your favourite editor
+6. Change the values of variables as required to suite your environment
+   - note: if you wish to use a hostname instead of an IP address, uncomment line 184 of `install.sh`
+7. Save the file/s
+9. Run `install.sh` as root
+10. Please be patient while the script runs
+11. Done
 
 **Installs the following:**
 
