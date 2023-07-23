@@ -3,7 +3,7 @@
 #
 # Install Nextcloud on FreeBSD/HardenedBSD
 #
-# Last update: 2023-07-22
+# Last update: 2023-07-23
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 #
 
@@ -106,6 +106,7 @@ openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa
 sed -i '' "s|IP_ADDRES|${IP_ADDRESS}|" "${PWD}/includes/httpd.conf"
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/httpd.conf"
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/nextcloud.conf"
+sed -i '' "s|SSL_DIRECTORY|${SSL_DIRECTORY}|" "${PWD}/includes/nextcloud.conf"
 sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/includes/php.ini"
 # Disable PHP Just-in-Time compilation for HardenedBSD support
 if [ "$hbsd_test" ]
