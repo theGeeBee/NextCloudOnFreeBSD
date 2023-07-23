@@ -98,12 +98,12 @@ chown -R www:www "${WWW_DIR}/nextcloud"
 
 # Create self-signed SSL certificate
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
-openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout /usr/local/etc/apache24/server.key -out /usr/local/etc/apache24/server.crt
+openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
 
 #
 # Copy pre-writting config files and edit in place
 #
-sed -i '' "s|IP_ADDRES|${IP_ADDRESS}|" "${PWD}/includes/httpd.conf"
+sed -i '' "s|IP_ADDRESS|${IP_ADDRESS}|" "${PWD}/includes/httpd.conf"
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/httpd.conf"
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/nextcloud.conf"
 sed -i '' "s|SSL_DIRECTORY|${SSL_DIRECTORY}|" "${PWD}/includes/nextcloud.conf"
@@ -222,7 +222,7 @@ sudo -u www php "${WWW_DIR}/nextcloud/occ" app:install files_antivirus
 ### set correct value for path on FreeBSD and set default action
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_mode --value="socket"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_socket --value="/var/run/clamav/clamd.sock"
-sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_stream_max_length --value"104857600"
+sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_stream_max_length --value="104857600"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set files_antivirus av_infected_action --value="only_log"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set activity notify_notification_virus_detected --value="1"
 
@@ -245,7 +245,6 @@ sudo -u www php "${WWW_DIR}/nextcloud/occ" config:app:set activity notify_notifi
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/www-crontab"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" background:cron
 crontab -u www "${PWD}/includes/www-crontab"
-# sudo -u www /usr/local/bin/php -f "${WWW_DIR}/nextcloud/cron.php" &>/dev/null &
 
 # Create reference file
 cat >>"/root/${HOST_NAME}_reference.txt" <<EOL
@@ -278,3 +277,5 @@ echo "Installation Complete!"
 echo ""
 cat "/root/${HOST_NAME}_reference.txt"
 echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
+echo "Post install: running the first maintenance task."
+sudo -u www /usr/local/bin/php -f "${WWW_DIR}/nextcloud/cron.php" &
