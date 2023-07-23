@@ -2,15 +2,13 @@
 
 #
 # Install Document Server add-on for NextCloud
-# Tested on:
-# ----------
-# 1. FreeBSD 12+
-# Last update: 2023-07-01
+# This is untested on NC27
+# Last update: 2023-07-23
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 #
 
 # Load config settings
-. nextcloud.conf
+. install.conf
 
 # Check for root privileges
 if [ "$(id -u)" -ne 0 ]; then
