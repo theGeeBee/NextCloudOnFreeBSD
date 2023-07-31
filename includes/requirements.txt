@@ -31,7 +31,7 @@ php82-pcntl
 php82-pdo
 php82-pdo_mysql
 php82-pecl-APCu
-php82-pecl-imagick-im7
+php82-pecl-imagick
 php82-pecl-redis
 php82-pecl-smbclient
 php82-phar
