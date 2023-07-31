@@ -170,6 +170,8 @@ cp -f "${PWD}/includes/root_my.cnf" /root/.my.cnf
 #
 # CLI installation and configuration of Nextcloud
 #
+clear
+echo "Installing Nextcloud..."
 sudo -u www php "${WWW_DIR}/nextcloud/occ" maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="127.0.0.1" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
 sudo -u www php "${WWW_DIR}/nextcloud/occ" db:add-missing-primary-keys
 sudo -u www php "${WWW_DIR}/nextcloud/occ" db:add-missing-indices
