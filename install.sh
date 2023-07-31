@@ -26,6 +26,23 @@ else
     exit 1
 fi
 
+#
+# Download and verify Nextcloud
+#
+FILE="latest-${NEXTCLOUD_VERSION}.tar.bz2"
+if ! fetch -o /tmp "https://download.nextcloud.com/server/releases/${FILE}" "https://download.nextcloud.com/server/releases/${FILE}".asc https://nextcloud.com/nextcloud.asc
+then
+	echo "Failed to download Nextcloud"
+	exit 1
+fi
+gpg --import /tmp/nextcloud.asc
+if ! gpg --verify "/tmp/${FILE}.asc"
+then
+	echo "GPG Signature Verification Failed!"
+	echo "The Nextcloud download is corrupt."
+	exit 1
+fi
+
 # Check if HBSD is present in uname string
 hbsd_test=$(uname -a | grep -o 'HBSD')
 
@@ -81,23 +98,6 @@ freshclam --quiet
 
 # Add user `www` to group `redis`
 pw usermod www -G redis
-
-#
-# Download and verify Nextcloud
-#
-FILE="latest-${NEXTCLOUD_VERSION}.tar.bz2"
-if ! fetch -o /tmp "https://download.nextcloud.com/server/releases/${FILE}" "https://download.nextcloud.com/server/releases/${FILE}".asc https://nextcloud.com/nextcloud.asc
-then
-	echo "Failed to download Nextcloud"
-	exit 1
-fi
-gpg --import /tmp/nextcloud.asc
-if ! gpg --verify "/tmp/${FILE}.asc"
-then
-	echo "GPG Signature Verification Failed!"
-	echo "The Nextcloud download is corrupt."
-	exit 1
-fi
 
 # Extract Nextcloud and give `www` ownership of the directory
 tar xjf "/tmp/${FILE}" -C "${WWW_DIR}/"
