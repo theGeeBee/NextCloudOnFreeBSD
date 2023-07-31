@@ -1,5 +1,6 @@
 # NextCloud on FreeBSD
 Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
+The finished installation passes all nextcloud configuration checks.
 
 ## Instructions
 
@@ -18,8 +19,7 @@ Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
 * Nextcloud 27
 * Apache 2.4
 * MariaDB 10.6
-* PHP 8.2
-* APCu
+* PHP 8.2 (php-fpm)
 * Redis
 * ClamAV
 
@@ -30,8 +30,7 @@ Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
 * HTTP/2 over TLS
 * TLS1.3 only
 * HSTS Enabled
-* PHP with APCu enabled
-* Redis installed and enabled
+* PHP with APCu enabled (for fi
 
 ### NextCloud Apps Installed/Activated by default in config
 
@@ -43,5 +42,5 @@ Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
 * Notes
 * Nextcloud Talk
 * Tasks
-* External storage support (including `samba` and `ftp`)
+* External storage support (including `samba` and `ftp`) (Can be disabled independently)
   
