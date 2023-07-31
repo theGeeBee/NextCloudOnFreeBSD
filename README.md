@@ -9,8 +9,9 @@ The finished installation passes all nextcloud configuration checks.
 2. `cd` to folder as root
 3. Run `pre_install.sh` as root to create a boot environment and config file before installing, then reboot before moving on
 5. Open `install.conf` with your favourite editor
-6. Change the values of variables as required to suite your environment
-7. Save the file
+   (Note: see https://www.php.net/manual/en/timezones.php for your time zone)
+7. Change the values of variables as required to suite your environment
+8. Save the file
 9. Run `install.sh` as root
 10. Please be patient while the script runs
 11. Done
