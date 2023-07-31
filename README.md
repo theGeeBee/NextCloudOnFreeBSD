@@ -1,5 +1,6 @@
 # NextCloud on FreeBSD
-Script to automate installation of Nextcloud on: FreeBSD13+, HardenedBSD13
+
+Script to automate installation of Nextcloud on FreeBSD13+, HardenedBSD13
 The finished installation passes all nextcloud configuration checks.
 
 ## Instructions
@@ -29,8 +30,9 @@ The finished installation passes all nextcloud configuration checks.
 
 * HTTP/2 over TLS
 * TLS1.3 only
-* HSTS Enabled
-* PHP with APCu enabled (for fi
+* HSTS enabled
+* APCu enabled
+* Redis enabled (allows transactional file locking)
 
 ### NextCloud Apps Installed/Activated by default in config
 
