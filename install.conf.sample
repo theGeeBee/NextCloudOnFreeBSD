@@ -11,6 +11,7 @@ WWW_DIR="/usr/local/www"                             # NOTE: no trailing /
 SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /
 COUNTRY_CODE="XW"                                    # Example: US/UK/CA/AU/DE, etc.
 TIME_ZONE="Etc/GMT"                                  # See: https://www.php.net/manual/en/timezones.php
+
 # Do not modify the 2 variables below, they are populated by values above.
 OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}" # This populates the `-subj` field of the `openssl` request
 EMAIL_ADDRESS="${EMAIL_USERNAME}@${HOST_NAME}"       # Used for the `ServerAdmin` variable in Apache's httpd.conf
@@ -21,6 +22,17 @@ EMAIL_ADDRESS="${EMAIL_USERNAME}@${HOST_NAME}"       # Used for the `ServerAdmin
 ADMIN_USERNAME="admin"                      # Username for the Nextcloud Web UI
 ADMIN_PASSWORD="$(openssl rand -base64 12)" # Password for the Nextcloud Web UI
 DATA_DIRECTORY="/mnt/nextcloud_data"        # Please use something like /path/to/zfs/dataset/ - and use the script to create a subdirectory for NC data
+
+#
+# More Nextcloud settings, defaults should be OK for most users
+#
+ENCRYPT_DATA=false      # default is false, comes with a massive performance penalty
+# set to true will use your hostname instead of IP address. Make sure your DNS server can resolve this hostname.
+USE_HOSTNAME=false
+# Install Recommended apps in Nextcloud (default: true)
+INSTALL_APPS=true
+# Enable external storage support, to access remote storage from within Nextcloud
+EXTERNAL_STORAGE=true
 
 #
 # mySQL setttings (for Nextcloud)

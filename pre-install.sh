@@ -24,7 +24,7 @@ Next steps:
 -----------
 
 1. Reboot the system
-2. su - again and edit the variables in install.sh
+2. su - again and edit the variables in install.conf
 4. run install.sh
 
 That should be it.
