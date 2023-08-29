@@ -8,7 +8,7 @@ IP_ADDRESS="IP_ADDRESS_VALUE"
 SERVER_EMAIL="nextcloud-alert"                       # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
 NEXTCLOUD_VERSION="27"                               # v27 tested
 WWW_DIR="/usr/local/www"                             # NOTE: no trailing /
-SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /
+SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /, SSL_DIRECTORY="OFF" if you want to disable SSL and bring your own SSL on other reverse proxy server
 COUNTRY_CODE="XW"                                    # Example: US/UK/CA/AU/DE, etc.
 TIME_ZONE="Etc/GMT"                                  # See: https://www.php.net/manual/en/timezones.php
 
