@@ -3,7 +3,7 @@
 #
 # Install Nextcloud on FreeBSD/HardenedBSD
 #
-# Last update: 2023-07-31
+# Last update: 2023-08-29
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 #
 
@@ -20,7 +20,7 @@ fi
 CONFIG_FILE="${PWD}/install.conf"
 
 if [ -f "$CONFIG_FILE" ]; then
-    . $CONFIG_FILE
+    . "$CONFIG_FILE"
 else
     echo "Config file '$CONFIG_FILE' not found. Please create the config file by running pre-install.sh and try again."
     exit 1
@@ -106,9 +106,8 @@ tar xjf "/tmp/${FILE}" -C "${WWW_DIR}/"
 chown -R www:www "${WWW_DIR}/nextcloud"
 
 # Create self-signed SSL certificate
-if [ $SSL_DIRECTORY="OFF" ]; then
-   echo "SSH is disabled on this host, please setup SSL on your reverse proxy"
-   break
+if [ "$SSL_DIRECTORY" = "OFF" ]; then
+   echo "SSL is disabled on this host, please setup SSL on your reverse proxy"
 else
    mkdir -p "${SSL_DIRECTORY}"
    chown www:www "${SSL_DIRECTORY}"
@@ -127,10 +126,9 @@ sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/includes/php.ini"
 
 
 # Disable self-signed SSL certificate if SSL_DIRECTORY="OFF"
-if [ $SSL_DIRECTORY="OFF" ]; then
+if [ "$SSL_DIRECTORY" = "OFF" ]; then
    sed -i '' "s|LISTEN_PORT|80|" "${PWD}/includes/httpd.conf"
    sed -i '' "s|SSL_OFF_|# |" "${PWD}/includes/nextcloud.conf"
-   break
 else
    sed -i '' "s|LISTEN_PORT|443|" "${PWD}/includes/httpd.conf"
    sed -i '' "s|SSL_OFF_||" "${PWD}/includes/nextcloud.conf"
