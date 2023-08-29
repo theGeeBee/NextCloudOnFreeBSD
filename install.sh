@@ -106,10 +106,15 @@ tar xjf "/tmp/${FILE}" -C "${WWW_DIR}/"
 chown -R www:www "${WWW_DIR}/nextcloud"
 
 # Create self-signed SSL certificate
-mkdir -p "${SSL_DIRECTORY}"
-chown www:www "${SSL_DIRECTORY}"
-OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
-openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
+if [ $SSL_DIRECTORY="OFF" ]; then
+   echo "SSH is disabled on this host, please setup SSL on your reverse proxy"
+   break
+else
+   mkdir -p "${SSL_DIRECTORY}"
+   chown www:www "${SSL_DIRECTORY}"
+   OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
+   openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
+fi
 
 #
 # Copy pre-writting config files and edit in place
@@ -119,6 +124,18 @@ sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/httpd.conf"
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/nextcloud.conf"
 sed -i '' "s|SSL_DIRECTORY|${SSL_DIRECTORY}|" "${PWD}/includes/nextcloud.conf"
 sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/includes/php.ini"
+
+
+# Disable self-signed SSL certificate if SSL_DIRECTORY="OFF"
+if [ $SSL_DIRECTORY="OFF" ]; then
+   sed -i '' "s|LISTEN_PORT|80|" "${PWD}/includes/httpd.conf"
+   sed -i '' "s|SSL_OFF_|# |" "${PWD}/includes/nextcloud.conf"
+   break
+else
+   sed -i '' "s|LISTEN_PORT|443|" "${PWD}/includes/httpd.conf"
+   sed -i '' "s|SSL_OFF_||" "${PWD}/includes/nextcloud.conf"
+fi
+
 # Disable PHP Just-in-Time compilation for HardenedBSD support
 if [ "$hbsd_test" ]
 	then
