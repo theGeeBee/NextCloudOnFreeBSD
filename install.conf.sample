@@ -1,15 +1,15 @@
 #
 # All fields are required
 # Common settings
-#
+FREEBSD_REPO="latest"                                # Set repository for FreeBSD
 EMAIL_USERNAME="nextcloud-admin"                     # Used for the `ServerAdmin` variable in Apache's httpd.conf
-HOST_NAME="nextcloud.my.network"                     # Set to the same as the entry in your DNS server (See line 184 in install.sh)
+HOST_NAME="nextcloud.my.network"
 IP_ADDRESS="IP_ADDRESS_VALUE"
 SERVER_EMAIL="nextcloud-alert"                       # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
-NEXTCLOUD_VERSION="27"                               # v27 tested
+NEXTCLOUD_VERSION="28"                               # v27, v28 tested
 WWW_DIR="/usr/local/www"                             # NOTE: no trailing /
 SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /, SSL_DIRECTORY="OFF" if you want to disable SSL (eg. using reverse proxy with SSL)
-COUNTRY_CODE="XW"                                    # Example: US/UK/CA/AU/DE, etc.
+COUNTRY_CODE="XW"                                    # Example: US/UK/CA/AU/DE/ZA, etc.
 TIME_ZONE="Etc/GMT"                                  # See: https://www.php.net/manual/en/timezones.php
 
 # Do not modify the 2 variables below, they are populated by values above.
@@ -21,14 +21,19 @@ EMAIL_ADDRESS="${EMAIL_USERNAME}@${HOST_NAME}"       # Used for the `ServerAdmin
 #
 ADMIN_USERNAME="admin"                      # Username for the Nextcloud Web UI
 ADMIN_PASSWORD="$(openssl rand -base64 12)" # Password for the Nextcloud Web UI
-DATA_DIRECTORY="/mnt/nextcloud_data"        # Please use something like /path/to/zfs/dataset/ - and use the script to create a subdirectory for NC data
+CREATE_DATASETS=false                       # Set to false to override creation of datasets 
+                                            # Setting to true will not work inside a jail (install.sh line 58)
+                                            # You will still need to set both variables below 
+                                            # to create the nextcloud data path even if CREATE_DATASETS=false
+DATASET="nextcloud_data"                    # This will automatically be used with eg. zroot/DATASET
+DATA_DIRECTORY="/mnt/${DATASET}"            # This is the mountpoint used by your dataset
 
 #
 # More Nextcloud settings, defaults should be OK for most users
 #
 ENCRYPT_DATA=false      # default is false, comes with a massive performance penalty
 # set to true will use your hostname instead of IP address. Make sure your DNS server can resolve this hostname.
-USE_HOSTNAME=false
+USE_HOSTNAME=true
 # Install Recommended apps in Nextcloud (default: true)
 INSTALL_APPS=true
 # Enable external storage support, to access remote storage from within Nextcloud
