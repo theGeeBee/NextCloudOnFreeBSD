@@ -8,7 +8,11 @@ IP_ADDRESS="IP_ADDRESS_VALUE"
 SERVER_EMAIL="nextcloud-alert"                       # will have ${HOST_NAME} automatically appened, used to send out alerts from the server by `sendmail`
 NEXTCLOUD_VERSION="28"                               # v27, v28 tested
 WWW_DIR="/usr/local/www"                             # NOTE: no trailing /
-SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /, SSL_DIRECTORY="OFF" if you want to disable SSL (eg. using reverse proxy with SSL)
+SSL_DIRECTORY="/usr/local/www/ssl"                   # NOTE: no trailing /
+                                                     # SSL_DIRECTORY="OFF" if you want to disable SSL 
+                                                     # (eg. using reverse proxy with SSL)
+                                                     # SSL_DIRECTORY="PUBLIC" if your hostname is a public address and you
+                                                     # want to generate a certifcate with letsencrypt
 COUNTRY_CODE="XW"                                    # Example: US/UK/CA/AU/DE/ZA, etc.
 TIME_ZONE="Etc/GMT"                                  # See: https://www.php.net/manual/en/timezones.php
 

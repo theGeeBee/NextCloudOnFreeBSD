@@ -3,7 +3,7 @@
 #
 # Install Nextcloud on FreeBSD/HardenedBSD
 #
-# Last update: 2024-03-22
+# Last update: 2024-03-24
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 #
 
@@ -144,6 +144,12 @@ chown -R www:www "${WWW_DIR}/${HOST_NAME}"
 # Create self-signed SSL certificate
 if [ "$SSL_DIRECTORY" = "OFF" ]; then
    echo "SSL is disabled on this host, please setup SSL on your reverse proxy"
+elif [ "$SSL_DIRECTORY" = "PUBLIC" ]; then
+   SSL_DIRECTORY="/usr/local/etc/letsencrypt/live/${HOST_NAME}"
+   sed -i '' "s|nextcloud.crt|fullchain.pem|" "${PWD}/includes/nextcloud.conf"
+   sed -i '' "s|nextcloud.key|privkey.pem|" "${PWD}/includes/nextcloud.conf"
+   pkg install -y security/py-certbot-apache
+   certbot certonly --standalone --agree-tos -n -d "$HOST_NAME"
 else
    mkdir -p "${SSL_DIRECTORY}"
    chown www:www "${SSL_DIRECTORY}"
