@@ -136,22 +136,6 @@ tar xjf "/tmp/${FILE}" -C "${WWW_DIR}/"
 mv "${WWW_DIR}/nextcloud" "${WWW_DIR}/${HOST_NAME}"
 chown -R www:www "${WWW_DIR}/${HOST_NAME}"
 
-# Create self-signed SSL certificate
-if [ "$SSL_DIRECTORY" = "OFF" ]; then
-   echo "SSL is disabled on this host, please setup SSL on your reverse proxy"
-elif [ "$SSL_DIRECTORY" = "PUBLIC" ]; then
-   SSL_DIRECTORY="/usr/local/etc/letsencrypt/live/${HOST_NAME}"
-   sed -i '' "s|nextcloud.crt|fullchain.pem|" "${PWD}/includes/nextcloud.conf"
-   sed -i '' "s|nextcloud.key|privkey.pem|" "${PWD}/includes/nextcloud.conf"
-   pkg install -y security/py-certbot-apache
-   certbot certonly --standalone --agree-tos --email "$EMAIL_ADDRESS" -n -d "$HOST_NAME"
-else
-   mkdir -p "${SSL_DIRECTORY}"
-   chown www:www "${SSL_DIRECTORY}"
-   OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
-   openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
-fi
-
 #
 # Start services
 #
@@ -161,6 +145,23 @@ apachectl start
 service mysql-server start
 service php_fpm start
 service clamav_clamd onestart
+
+
+# Create self-signed SSL certificate
+if [ "$SSL_DIRECTORY" = "OFF" ]; then
+   echo "SSL is disabled on this host, please setup SSL on your reverse proxy"
+elif [ "$SSL_DIRECTORY" = "PUBLIC" ]; then
+   SSL_DIRECTORY="/usr/local/etc/letsencrypt/live/${HOST_NAME}"
+   sed -i '' "s|nextcloud.crt|fullchain.pem|" "${PWD}/includes/nextcloud.conf"
+   sed -i '' "s|nextcloud.key|privkey.pem|" "${PWD}/includes/nextcloud.conf"
+   pkg install -y security/py-certbot-apache
+   certbot certonly --apache --agree-tos --email "$EMAIL_ADDRESS" -n -d "$HOST_NAME"
+else
+   mkdir -p "${SSL_DIRECTORY}"
+   chown www:www "${SSL_DIRECTORY}"
+   OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
+   openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
+fi
 
 # Update virus definitions again to report update to daemon
 freshclam --quiet
@@ -175,6 +176,8 @@ sed -i '' "s|EMAIL_ADDRESS|${EMAIL_ADDRESS}|" "${PWD}/includes/httpd.conf"
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/nextcloud.conf"
 sed -i '' "s|SSL_DIRECTORY|${SSL_DIRECTORY}|" "${PWD}/includes/nextcloud.conf"
 sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/includes/php.ini"
+sed -i '' "s|IP_ADDRESS|${IP_ADDRESS}|" "${PWD}/includes/certbot.conf"
+sed -i '' "s|HOST_NAME|${HOST_NAME}|" "${PWD}/includes/certbot.conf"
 
 
 # Disable self-signed SSL certificate if SSL_DIRECTORY="OFF"
@@ -203,6 +206,7 @@ cp -f "${PWD}/includes/httpd.conf" /usr/local/etc/apache24/
 cp -f "${PWD}/includes/php.ini" /usr/local/etc/php.ini
 cp -f "${PWD}/includes/www.conf" /usr/local/etc/php-fpm.d/
 cp -f "${PWD}/includes/redis.conf" /usr/local/etc/redis.conf
+cp -f "${PWD}/includes/certbot.conf" /usr/local/etc/apache24/vhosts/certbot.conf
 cp -f "${PWD}/includes/nextcloud.conf" "/usr/local/etc/apache24/vhosts/${HOST_NAME}.conf"
 cp -f "${PWD}/includes/030_php-fpm.conf" /usr/local/etc/apache24/modules.d/
 cp -f "${PWD}/includes/my.cnf" /usr/local/etc/mysql/
