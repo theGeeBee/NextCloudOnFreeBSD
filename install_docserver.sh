@@ -2,8 +2,7 @@
 
 #
 # Install Document Server add-on for NextCloud
-# This is untested on NC30; please report issues
-# Last update: 2024-04-14
+# Last update: 2025-05-17
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 #
 
@@ -45,13 +44,13 @@ fi
 kldload linux.ko linux64.ko linprocfs.ko linsysfs.ko
 
 # Install required packages
-pkg install -y linux_base-c7
+sudo pkg install -y linux_base-rl9
 
 # Enable services
 sysrc linux_enable="YES"
 
 # Set linux compatibility mount points
-cat fstab >> /etc/fstab
+cat "${PWD}/includes/fstab" >> /etc/fstab
 
 # Start services
 service linux start
@@ -60,7 +59,7 @@ service linux start
 echo "Installing Document Server for Nextcloud."
 
 # ONLYOFFICE
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable onlyoffice
+sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install onlyoffice
 sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install documentserver_community
 
 # set ONLYOFFICE to accept the self-signed certificate and point it to ${MY_IP} instead of localhost
