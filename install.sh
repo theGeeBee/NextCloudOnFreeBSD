@@ -3,7 +3,7 @@
 #
 # Install Nextcloud on FreeBSD/HardenedBSD
 #
-# Last update: 2025-01-30
+# Last update: 2026-05-19
 # https://github.com/theGeeBee/NextCloudOnFreeBSD/
 #
 
@@ -245,52 +245,52 @@ cp -f "${PWD}/includes/root_my.cnf" /root/.my.cnf
 #
 clear
 echo "Installing Nextcloud..."
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="127.0.0.1" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-primary-keys
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-indices
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-columns
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:convert-filecache-bigint --no-interaction
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:mimetype:update-db
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set allow_local_remote_servers --value=true --type=boolean
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set maintenance_window_start --value=1 --type=integer
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set default_phone_region --value="${COUNTRY_CODE}"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logtimezone --value="${TIME_ZONE}"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logdateformat --value="Y-m-d H:i:s T"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set log_type --value=file
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logfile --value="/var/log/nextcloud/${INSTANCE_NAME}.log"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set loglevel --value=2 --type=integer
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logrotate_size --value=104847600 --type=integer
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set filelocking.enabled --value=true --type=boolean
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.local --value="\OC\Memcache\APCu"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set redis host --value=/var/run/redis/redis.sock
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set redis port --value=0 --type=integer
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.distributed --value="\OC\Memcache\Redis"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.locking --value="\OC\Memcache\Redis"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="127.0.0.1" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-primary-keys
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-indices
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-columns
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:convert-filecache-bigint --no-interaction
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:mimetype:update-db
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set allow_local_remote_servers --value=true --type=boolean
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set maintenance_window_start --value=1 --type=integer
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set default_phone_region --value="${COUNTRY_CODE}"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logtimezone --value="${TIME_ZONE}"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logdateformat --value="Y-m-d H:i:s T"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set log_type --value=file
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logfile --value="/var/log/nextcloud/${INSTANCE_NAME}.log"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set loglevel --value=2 --type=integer
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logrotate_size --value=104847600 --type=integer
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set filelocking.enabled --value=true --type=boolean
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.local --value="\OC\Memcache\APCu"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set redis host --value=/var/run/redis/redis.sock
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set redis port --value=0 --type=integer
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.distributed --value="\OC\Memcache\Redis"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.locking --value="\OC\Memcache\Redis"
 if [ "$USE_HOSTNAME" = "true" ]; then
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 0 --value="${HOST_NAME}"
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwritehost --value="${HOST_NAME}"
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwrite.cli.url --value="https://${HOST_NAME}"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 0 --value="${HOST_NAME}"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwritehost --value="${HOST_NAME}"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwrite.cli.url --value="https://${HOST_NAME}"
 else
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 0 --value="${IP_ADDRESS}"
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 1 --value="${HOST_NAME}"
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwrite.cli.url --value="https://${IP_ADDRESS}"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 0 --value="${IP_ADDRESS}"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 1 --value="${HOST_NAME}"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwrite.cli.url --value="https://${IP_ADDRESS}"
 fi
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwriteprotocol --value=https
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set htaccess.RewriteBase --value=/
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:update:htaccess
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwriteprotocol --value=https
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set htaccess.RewriteBase --value=/
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:update:htaccess
 # Set Nextcloud to use sendmail (you can change this later in the GUI)
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_smtpmode --value=sendmail
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_sendmailmode --value=pipe
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_domain --value="${HOST_NAME}"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_from_address --value="${SERVER_EMAIL}"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_smtpmode --value=sendmail
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_sendmailmode --value=pipe
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_domain --value="${HOST_NAME}"
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_from_address --value="${SERVER_EMAIL}"
 # Disable contactsinteraction because the behaviour is unwanted, and confusing
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:disable contactsinteraction
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:disable contactsinteraction
 # Enable external storage support (Example: mount a SMB share in Nextcloud).
 # Users are not allowed to mount external storage, but can be allowed under Settings -> Admin -> External Storage
 if [ "$EXTERNAL_STORAGE" = "true" ]; then
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable files_external
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_external allow_user_mounting --value=no
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable files_external
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_external allow_user_mounting --value=no
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
 fi
 
 #
@@ -299,13 +299,13 @@ fi
 if [ "$INSTALL_APPS" = "true" ]; then
 	clear
 	echo "Nextcloud is now installed, installing recommended Apps..."
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install calendar
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install contacts
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install deck
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install mail
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install notes
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install spreed # Nextcloud Talk
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install tasks
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install calendar
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install contacts
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install deck
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install mail
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install notes
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install spreed # Nextcloud Talk
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install tasks
 fi
 
 #
@@ -313,13 +313,13 @@ fi
 #
 clear
 echo "Now installing and configuring Antivirus for File using ClamAV..."
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install files_antivirus
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install files_antivirus
 ### set correct value for path on FreeBSD and set default action
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_mode --value=socket
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_socket --value=/var/run/clamav/clamd.sock
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_stream_max_length --value=104857600 --type=integer
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_infected_action --value=only_log
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set activity notify_notification_virus_detected --value=1 --type=integer
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_mode --value=socket
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_socket --value=/var/run/clamav/clamd.sock
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_stream_max_length --value=104857600 --type=integer
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_infected_action --value=only_log
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set activity notify_notification_virus_detected --value=1 --type=integer
 
 #
 # SERVER SIDE ENCRYPTION 
@@ -327,14 +327,14 @@ sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set activity notify_not
 # This comes with limitations like a performance penalty, so enable this only if needed.
 #
 if [ "$ENCRYPT_DATA" = "true" ]; then
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable encryption
-	sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" encryption:enable
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable encryption
+	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" encryption:enable
 fi
 
 # Set Nextcloud to run maintenance tasks as a cron job
 sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/www-crontab"
 sed -i '' "s|HOST_NAME|${HOST_NAME}|" "${PWD}/includes/www-crontab"
-sudo -u www php "${WWW_DIR}/${HOST_NAME}/occ" background:cron
+mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" background:cron
 crontab -u www "${PWD}/includes/www-crontab"
 
 # Create reference file
@@ -343,7 +343,7 @@ if [ "$SSL_DIRECTORY" = "OFF" ]; then
 Nextcloud installation details:
 ===============================
 
-Server address : https://${HOST_NAME} or https://${IP_ADDRESS}
+Server address : http://${HOST_NAME} or http://${IP_ADDRESS}
 Data directory : ${DATA_DIRECTORY}
 
 Nextcloud GUI Login:
@@ -393,4 +393,4 @@ cat "/root/${HOST_NAME}_reference.txt"
 echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
 
 # Run the Nextcloud background task for the first time
-sudo -u www /usr/local/bin/php -f "${WWW_DIR}/${HOST_NAME}/cron.php" &
+mdo -u www /usr/local/bin/php -f "${WWW_DIR}/${HOST_NAME}/cron.php" &
