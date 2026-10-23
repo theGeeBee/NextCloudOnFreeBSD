@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+export PATH
+/usr/local/sbin/apachectl configtest
+/usr/sbin/service apache24 graceful

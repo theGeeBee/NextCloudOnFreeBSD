@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "instance": "team2",
+  "pool": "zroot",
+  "public_hostname": "team2.example.test",
+  "nextcloud_hostname": "team2-files.internal.example.test",
+  "onlyoffice_hostname": "team2-docs.internal.example.test",
+  "admin_email": "admin@example.test",
+  "external_interface": "igb0",
+  "ingress_address": "192.0.2.10",
+  "dns_server": "192.0.2.53",
+  "management_network": "198.51.100.0/24",
+  "private_network": "10.77.0.8/29",
+  "nextcloud_bridge": "bridge242",
+  "onlyoffice_bridge": "bridge243",
+  "tls_mode": "external",
+  "http_port": 8080,
+  "proxy_networks": "192.0.2.20/32"
+}

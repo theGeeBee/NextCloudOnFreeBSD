@@ -1,0 +1,21 @@
+#!/bin/sh
+# PROVIDE: cloud_php_dirs
+# REQUIRE: LOGIN
+# BEFORE: php_fpm redis
+# /var/run can be cleared at boot. FreeBSD socket access is protected by the
+# containing directory as well as the socket mode. redis_prestart sets its
+# PID directory to 0755, so the socket lives in a separate private subdirectory.
+. /etc/rc.subr
+name=cloud_php_dirs
+rcvar=cloud_php_dirs_enable
+start_cmd=cloud_php_dirs_start
+stop_cmd=:
+cloud_php_dirs_start()
+{
+    install -d -o root -g www -m 750 /var/run/php-fpm
+    install -d -o redis -g redis -m 755 /var/run/redis
+    install -d -o redis -g redis -m 750 /var/run/redis/private
+}
+load_rc_config "$name"
+: "${cloud_php_dirs_enable:=NO}"
+run_rc_command "$1"

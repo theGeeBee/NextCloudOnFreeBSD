@@ -1,0 +1,15 @@
+#!/bin/sh
+# newsyslog's R flag executes this path and appends its numeric signal argument
+# (normally 1). That argument is deliberately unused; mariadbd is NOT signalled.
+# Verified: FreeBSD releng/15.1 usr.sbin/newsyslog/newsyslog.c:do_sigwork().
+# MariaDB 12.3 sql/sql_reload.cc handles ERROR and SLOW log flushes separately
+# from binary/relay logs. Unix-socket root authentication needs no stored secret.
+set -eu
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+export PATH
+[ "$(id -u)" -eq 0 ] || exit 1
+# Rotation while the daemon is deliberately stopped needs no reopen operation.
+/usr/sbin/service mysql-server onestatus >/dev/null 2>&1 || exit 0
+exec /usr/local/bin/mariadb --no-defaults --protocol=socket \
+    --socket=/var/run/mysql/mysql.sock -u root --batch \
+    -e 'FLUSH NO_WRITE_TO_BINLOG ERROR LOGS; FLUSH NO_WRITE_TO_BINLOG SLOW LOGS;'

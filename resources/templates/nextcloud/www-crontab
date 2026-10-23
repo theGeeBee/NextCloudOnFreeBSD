@@ -1,0 +1,4 @@
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin
+TMPDIR=/var/nc-tmp/nextcloud
+*/5 * * * * /usr/local/bin/php -f /usr/local/www/nextcloud/cron.php >> /var/log/nextcloud/cron.log 2>&1

@@ -1,0 +1,20 @@
+/install.conf
+/onlyoffice.conf
+__pycache__/
+*.py[cod]
+
+# Private JSON/payload copies. Live state belongs outside the checkout.
+/config.json
+/secrets.json
+/credentials.json
+/runtime.json
+/connector.json
+/deployment.json
+/nextcloud-jails-installer/
+/cloud-installer/
+/backups/
+/downloads/
+/dist/
+/build/
+/*.egg-info/
+/*_reference.txt

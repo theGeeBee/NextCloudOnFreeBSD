@@ -1,0 +1,95 @@
+# FreeBSD package names (not port directory names or pip requirements).
+# standard installs required entries; comprehensive also installs available optional
+# entries. Preflight reports optional absences and refuses missing required ones.
+# Reviewed FreeBSD:15:amd64/latest catalog and ports: 2026-10-14; docs/fonts.md.
+required dejavu
+required liberation-fonts-ttf
+required croscorefonts
+required crosextrafonts-caladea
+required crosextrafonts-carlito
+required freefont-ttf
+required noto-basic
+
+# Broad Google collection, all packaged Noto scripts, CJK regional variants,
+# symbols, mathematical notation and emoji. These metaports pull real fonts.
+optional google-fonts
+optional noto-extra
+optional noto-hk
+optional noto-jp
+optional noto-kr
+optional noto-sc
+optional noto-tc
+optional noto-emoji
+optional noto-sans-symbols
+optional noto-sans-symbols2
+optional gnu-unifont-otf
+optional hanazono-fonts-ttf
+optional wqy-fonts
+
+# Common document, publishing, accessibility and presentation families.
+optional Andika
+optional Charis
+optional DoulosSIL
+optional Gentium
+optional GentiumBook
+optional Lohit
+optional alef
+optional alegreya
+optional alegreya-sans
+optional b612
+optional bitter
+optional bitstream-vera
+optional cantarell-fonts
+optional clearsans
+optional comic-neue
+optional comfortaa-ttf
+optional courier-prime
+optional droid-fonts-ttf
+optional exo
+optional fira
+optional firago
+optional geist-sans
+optional jf-openhuninn
+optional junicode
+optional lato
+optional league-gothic
+optional league-spartan
+optional libertinus
+optional linuxlibertine
+optional manrope
+optional montserrat
+optional opensans-ttf
+optional padauk
+optional paratype
+optional plex-ttf
+optional raleway
+optional roboto-fonts-ttf
+optional source-sans-ttf
+optional source-serif-ttf
+optional tlwg-ttf
+optional ubuntu-font
+optional urw-base35-fonts
+optional vazirmatn
+optional vollkorn-ttf
+
+# Technical documents and mathematical/code typography.
+optional stixfonts
+optional font-tex-gyre-bonum-math
+optional font-tex-gyre-pagella-math
+optional font-tex-gyre-schola-math
+optional font-tex-gyre-termes-math
+optional anonymous-pro
+optional cascadia-code
+optional commit-mono
+optional fantasque-sans-mono
+optional firacode
+optional geist-mono
+optional gofont-ttf
+optional hack-font
+optional inconsolata-ttf
+optional intel-one-mono
+optional jetbrains-mono
+optional juliamono
+optional monaspace
+optional source-code-pro-ttf
+optional victor-mono-ttf

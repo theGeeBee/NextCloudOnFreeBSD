@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "freebsd-cloud-installer"
+version = "0.0.0.dev0"
+description = "Interactive Nextcloud and ONLYOFFICE Bastille jail installer for policy-validated FreeBSD targets"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.scripts]
+cloud-installer = "installer.main:entrypoint"
+
+[project.urls]
+Repository = "https://github.com/theGeeBee/NextCloudOnFreeBSD"
+
+[tool.setuptools.packages.find]
+include = ["installer", "resources*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+resources = ["versions.json", "jails/*.sh", "jails/*.php", "vm/*.sh", "templates/nextcloud/*", "templates/onlyoffice/*", "packages/fonts.txt"]

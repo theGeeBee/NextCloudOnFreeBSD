@@ -1,396 +1,522 @@
 #!/bin/sh
 
-#
-# Install Nextcloud on FreeBSD/HardenedBSD
-#
-# Last update: 2026-05-19
-# https://github.com/theGeeBee/NextCloudOnFreeBSD/
-#
+# The sole operator entrypoint, from a checkout or a verified release archive.
+set +x
+set +v
+set -eu
 
-#
-# Check for root privileges
-#
-if [ "$(id -u)" -ne 0 ]; then
-   echo "This script must be run with root privileges."
-   echo "Type 'su' to switch to root and remain in this directory."
-   exit 1
-fi
-
-# Check if HBSD is present in uname string
-hbsd_test=$(uname -a | grep -o 'HBSD')
-
-# Load config settings
-CONFIG_FILE="${PWD}/install.conf"
-
-if [ -f "$CONFIG_FILE" ]; then
-    . "$CONFIG_FILE"
-else
-    echo "Config file '$CONFIG_FILE' not found. Please create the config file by running pre-install.sh and try again."
-    exit 1
-fi
-
-#
-# Set `pkg` to use LATEST if set (default setting)
-#
-if [ "$FREEBSD_REPO" = "latest" ]; then
-	mkdir -p /usr/local/etc/pkg/repos
-	echo "FreeBSD: { enabled: no }" > /usr/local/etc/pkg/repos/FreeBSD.conf
-	cp /etc/pkg/FreeBSD.conf /usr/local/etc/pkg/repos/nextcloud.conf
-	sed -i '' "s|quarterly|latest|" /usr/local/etc/pkg/repos/nextcloud.conf
-fi
-
-#
-# Install `pkg`, update repository, upgrade existing packages
-#
-echo "Installing pkg and updating repositories"
-pkg bootstrap -y
-pkg update
-pkg upgrade -y
-
-# Install required packages
-xargs pkg install -y < "${PWD}/includes/requirements.txt"
-
-# Check if not running in a jail + CREATE_DATASET_*=true
-# then create datasets for mariaDB's databases and log files that are optimised
-# Also create dataset for nextcloud data - this is not useful if you have multiple datasets
-# because it creates it under the root dataset, so modify accordingly, or turn off and create as a directory
-# use recommended settings from this script as a guide.
-if [ "$(sysctl -n security.jail.jailed)" -ne 1 ] && [ "$CREATE_DATASET_MARIADB" = "true" ]; then
-	# Remove the directories created by MariaDB so that we can create new ZFS datasets in their place.
-	rm -r /var/db/mysql
-	rm -r /var/log/mysql
-	# Find the ZFS dataset containing the root file system
-	zfs_dataset=$(zfs list -H -o name -r -t filesystem -o name,mountpoint | awk 'NR==1 {print $1}')
-
-	# Check if the dataset is found
-	if [ -z "$zfs_dataset" ]; then
-		echo "Error: Root ZFS dataset not found."
-		exit 1
-	fi
-	# Create the MariaDB dataset with the desired properties, including primarycache=metadata
-	zfs create -o recordsize=16K -o aclmode=restricted -o mountpoint=/var/db/mysql -o primarycache=metadata -o compression=lz4 "$zfs_dataset"/mariadb_data
-	# Create the second dataset for /var/log/mysql with the same properties
-	zfs create -o recordsize=128K -o aclmode=restricted -o mountpoint=/var/log/mysql -o primarycache=metadata -o compression=lz4 "$zfs_dataset"/mariadb_logs
-	# Set ownership to the MySQL user for both datasets
-	chown -R mysql:mysql /var/db/mysql /var/log/mysql
-fi
-
-if [ "$(sysctl -n security.jail.jailed)" -ne 1 ] && [ "$CREATE_DATASET_DATA" = "true" ]; then
-	# Create Nextcloud dataset with the desired properties
-	zfs create -o recordsize=16K -o aclmode=restricted -o mountpoint="${DATA_DIRECTORY}" -o primarycache=metadata -o compression=lz4 "${zfs_dataset}/${DATASET}"
-	# Set ownership to the www user for the dataset
-	chown www:www "${DATA_DIRECTORY}"
-else
-	# Create the Nextcloud data directory and set ownership to the www user
-	mkdir -p "${DATA_DIRECTORY}"
-	chown www:www "${DATA_DIRECTORY}"
-fi
-
-# Download virus definitions
-freshclam
-
-#
-# Download and verify Nextcloud
-#
-clear
-echo "Downloading Nextcloud v${NEXTCLOUD_VERSION}..."
-FILE="latest-${NEXTCLOUD_VERSION}.tar.bz2"
-if ! fetch -o /tmp "https://download.nextcloud.com/server/releases/${FILE}" "https://download.nextcloud.com/server/releases/${FILE}".asc https://nextcloud.com/nextcloud.asc
-then
-	echo "Failed to download Nextcloud"
+fail() {
+	printf 'Error: %s\n' "$*" >&2
 	exit 1
-fi
-gpg --import /tmp/nextcloud.asc
-if ! gpg --verify "/tmp/${FILE}.asc"
-then
-	echo "GPG Signature Verification Failed!"
-	echo "The Nextcloud download is corrupt."
-	exit 1
-fi
+}
 
-# Set `sysctl` values (necessary for `redis`)
-sysctl kern.ipc.somaxconn=1024
-echo "kern.ipc.somaxconn=1024" >> /etc/sysctl.conf
+usage() {
+	cat <<'USAGE'
+Usage: sh install.sh [--plain] [COMMAND]
+  (no command)                 Open the interactive instance menu
+  install | configure          Create an instance, or save its configuration
+  install --config FILE [--yes] [--accept-licenses] [--accept-acme-terms]
+  configure --config FILE      Use an authoritative schema-2 JSON recipe, no wizard
+                                FILE is relative to caller's cwd; paths inside must be absolute
+                                --yes approves pkg/Python bootstrap and APPLY only;
+                                fresh credentials are generated; terminal and timed KEEP remain required
+                                --accept-licenses accepts required Microsoft webfonts EULA:
+                                https://corefonts.sourceforge.net/eula.htm
+                                ACME terms require separate consent:
+                                https://letsencrypt.org/repository/
+  resume INSTANCE              Review and resume a retained installation
+  list                         List registered instances
+  status INSTANCE              Show retained instance state
+  check-updates [NAME|--all] [--refresh] [--save-report] [--json]
+                                Inspect update availability; never apply
+  check-security [NAME|--all] [--refresh] [--save-report] [--json]
+                                Independent core/package advisories; EOL coverage unknown
+  upgrade INSTANCE [--nextcloud VERSION] [--plan | --verify | --restore SNAPSHOT_REPORT] [--skip-packages]
+                                Optional native upgrade; initial NC35.0.1 -> 35.0.2
+                                --plan may refresh signed pkg metadata; --verify is live/read-only
+  maintenance register NAME     Explicitly enroll an eligible retained instance
+  maintenance plan --instance NAME (--recovery-only | --target PROFILE) [--save] [--json]
+                                Assess recovery preparation; target migration blocked
+  maintenance stage PLAN-ID --artifacts DIR
+  maintenance continue OP-ID --artifacts DIR
+                                Inputs: DIR/<sha256>.pkg; hashes listed by maintenance plan
+  maintenance prepare-target OP-ID --artifacts DIR
+                                Authenticate target and inspect runtime before any boot fence
+                                Inputs: local release/signature/key files and connector.archive
+  maintenance cancel OP-ID      Cancel inert artifact staging after confirmation
+  maintenance status [OP-ID] [--json]
+                                Inspect lifecycle state or a retained operation
+  maintenance recover          Continue the same interrupted enrollment
+  maintenance recover OP-ID --assess [--json]
+                                Read-only recovery assessment
+  maintenance apply OP-ID       Always blocked; no native execution recipe
+  verify INSTANCE              Check a completed instance
+  remove INSTANCE [--purge-data]
+  backup INSTANCE [--output PATH]
+  restore INSTANCE BACKUP
+  add-user INSTANCE            Add a Nextcloud user interactively
+  recover-install INSTANCE     Reset interrupted, unpublished initialization
+  recover-network              Recover an expired/interrupted PF transition
+  plan FILE                    Validate and print an offline JSON plan
+  resolve FILE [--metadata FILE] [--installed PLAN]
+                               Inspect versions/upgrade feasibility; never apply
+  --plan FILE | --configure-only | --verify INSTANCE   Compatibility aliases
+  --help                       Show this help without host changes
 
-# Fix that allows memories app to load correctly, should you choose to install it
+Standalone entrypoint (no clone required):
+  sh install.sh --archive HTTPS_URL_OR_LOCAL_TAR_GZ --sha256 TRUSTED_DIGEST COMMAND [ARGS]
+Archive commands: install, configure, resume, verify, backup, remove, restore,
+add-user, recover-install, recover-network (including compatibility aliases).
+Menu, list, status, check-updates, check-security, maintenance, upgrade, plan and resolve require an unpacked payload.
+Use a pinned cloud-installer/ release archive and its trusted SHA256. No release
+is selected or downloaded automatically. See docs/distribution.md.
+USAGE
+}
 
-ln -s /usr/local/bin/perl /usr/bin/perl
-ln -s /usr/local/bin/perl5 /usr/bin/perl5
-
-#
-# Enable services
-#
-sysrc sendmail_enable="YES"
-sysrc apache24_enable="YES"
-sysrc mysql_enable="YES"
-sysrc php_fpm_enable="YES"
-sysrc redis_enable="YES"
-sysrc clamav_clamd_enable="YES"
-sysrc clamav_freshclam_enable="YES"
-
-# Add user `www` to group `redis`
-pw usermod www -G redis
-
-# Extract Nextcloud and give `www` ownership of the directory
-tar xjf "/tmp/${FILE}" -C "${WWW_DIR}/"
-mv "${WWW_DIR}/nextcloud" "${WWW_DIR}/${HOST_NAME}"
-chown -R www:www "${WWW_DIR}/${HOST_NAME}"
-
-#
-# Start services
-#
-service sendmail start
-service redis start
-apachectl start
-service mysql-server start
-service php_fpm start
-service clamav_clamd onestart
-
-
-# Create self-signed SSL certificate
-if [ "$SSL_DIRECTORY" = "OFF" ]; then
-   echo "SSL is disabled on this host, please setup SSL on your reverse proxy"
-elif [ "$SSL_DIRECTORY" = "PUBLIC" ]; then
-   SSL_DIRECTORY="/usr/local/etc/letsencrypt/live/${HOST_NAME}"
-   sed -i '' "s|nextcloud.crt|fullchain.pem|" "${PWD}/includes/nextcloud.conf"
-   sed -i '' "s|nextcloud.key|privkey.pem|" "${PWD}/includes/nextcloud.conf"
-   pkg install -y security/py-certbot-apache
-   certbot certonly --apache --agree-tos --email "$EMAIL_ADDRESS" -n -d "$HOST_NAME"
-else
-   mkdir -p "${SSL_DIRECTORY}"
-   chown www:www "${SSL_DIRECTORY}"
-   OPENSSL_REQUEST="/C=${COUNTRY_CODE}/CN=${HOST_NAME}"
-   openssl req -x509 -nodes -days 3652 -sha512 -subj "$OPENSSL_REQUEST" -newkey rsa:2048 -keyout "${SSL_DIRECTORY}/nextcloud.key" -out "${SSL_DIRECTORY}/nextcloud.crt"
-fi
-
-# Update virus definitions again to report update to daemon
-freshclam --quiet
-
-#
-# Copy pre-writting config files and edit in place
-#
-sed -i '' "s|HOST_NAME|${HOST_NAME}|g" "${PWD}/includes/nextcloud.conf"
-sed -i '' "s|IP_ADDRESS|${IP_ADDRESS}|" "${PWD}/includes/nextcloud.conf"
-sed -i '' "s|IP_ADDRESS|${IP_ADDRESS}|" "${PWD}/includes/httpd.conf"
-sed -i '' "s|EMAIL_ADDRESS|${EMAIL_ADDRESS}|" "${PWD}/includes/httpd.conf"
-sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/nextcloud.conf"
-sed -i '' "s|SSL_DIRECTORY|${SSL_DIRECTORY}|" "${PWD}/includes/nextcloud.conf"
-sed -i '' "s|MYTIMEZONE|${TIME_ZONE}|" "${PWD}/includes/php.ini"
-sed -i '' "s|IP_ADDRESS|${IP_ADDRESS}|" "${PWD}/includes/certbot.conf"
-sed -i '' "s|HOST_NAME|${HOST_NAME}|" "${PWD}/includes/certbot.conf"
-
-
-# Disable self-signed SSL certificate if SSL_DIRECTORY="OFF"
-if [ "$SSL_DIRECTORY" = "OFF" ]; then
-   sed -i '' "s|LISTEN_PORT|80|" "${PWD}/includes/nextcloud.conf"
-   sed -i '' "s|LISTEN_PORT|80|" "${PWD}/includes/httpd.conf"
-   sed -i '' "s|SSL_OFF_|# |" "${PWD}/includes/nextcloud.conf"
-   sed -i '' "s|SSL_OFF_|# |" "${PWD}/includes/httpd.conf"
-   sed -i '' "s|Header|# Header|" "${PWD}/includes/nextcloud.conf"
-else
-   sed -i '' "s|LISTEN_PORT|443|" "${PWD}/includes/nextcloud.conf"
-   sed -i '' "s|LISTEN_PORT|443|" "${PWD}/includes/httpd.conf"
-   sed -i '' "s|SSL_OFF_||" "${PWD}/includes/nextcloud.conf"
-   sed -i '' "s|SSL_OFF_||" "${PWD}/includes/httpd.conf"
-fi
-
-# Disable PHP Just-in-Time compilation for HardenedBSD support
-if [ "$hbsd_test" ]
-	then
-		sed -i '' "s|pcre.jit=1|pcre.jit=0|" "${PWD}/includes/php.ini"
-		sed -i '' "s|opcache.jit = 1255|opcache.jit = 0|" "${PWD}/includes/php.ini"
-		sed -i '' "s|opcache.jit_buffer_size = 8M|opcache.jit_buffer_size = 0|" "${PWD}/includes/php.ini"
+require_host() {
+	[ "$(id -u)" -eq 0 ] || fail 'Run as root on the target FreeBSD host.'
+    [ "$(uname -s)" = FreeBSD ] || fail 'This installer requires a policy-supported FreeBSD host.'
+	userland=$(freebsd-version -u)
+	printf '%s\n' "$userland" | grep -Eq '^[0-9]+\.[0-9]+-RELEASE(-p[0-9]+)?$' \
+		|| fail 'A stable FreeBSD RELEASE userland is required; update the OS separately.'
+	[ "$(sysctl -n security.jail.jailed)" = 0 ] || fail 'Run on the host, outside any jail.'
+	architecture=$(uname -m)
+	case "$architecture" in ''|*[!A-Za-z0-9_]*) fail 'Invalid FreeBSD architecture.' ;; esac
+	# FreeBSD base flua checks the same policy before optional pkg/Python bootstrap.
+	# A standalone entrypoint cannot know the supplied artifact's support matrix
+	# until it is authenticated and unpacked. Require existing Python in that case
+	# rather than bootstrap packages on an environment with unknown compatibility.
+	if [ -f "${script_dir:-.}/resources/versions.json" ]; then
+		if ! /usr/libexec/flua - "${script_dir:-.}/resources/versions.json" "${userland%%-p*}" "$architecture" <<'LUA_HOST'
+local p = require('ucl').parser()
+assert(p:parse_file(arg[1]))
+local policy = p:get_object()
+for _, target in ipairs(policy.targets) do
+    if target.release == arg[2] and target.architecture == arg[3] then os.exit(0) end
+end
+os.exit(1)
+LUA_HOST
+		then fail 'This FreeBSD release/architecture has no reviewed compatibility policy.'; fi
+	else
+		require_python
 	fi
-mkdir /usr/local/etc/apache24/vhosts
-cp -f "${PWD}/includes/httpd.conf" /usr/local/etc/apache24/
-cp -f "${PWD}/includes/php.ini" /usr/local/etc/php.ini
-cp -f "${PWD}/includes/www.conf" /usr/local/etc/php-fpm.d/
-cp -f "${PWD}/includes/redis.conf" /usr/local/etc/redis.conf
-cp -f "${PWD}/includes/certbot.conf" /usr/local/etc/apache24/vhosts/certbot.conf
-cp -f "${PWD}/includes/nextcloud.conf" "/usr/local/etc/apache24/vhosts/${HOST_NAME}.conf"
-cp -f "${PWD}/includes/030_php-fpm.conf" /usr/local/etc/apache24/modules.d/
-cp -f "${PWD}/includes/my.cnf" /usr/local/etc/mysql/
+}
 
-#
-# Restart Services for modified configuration to take effect
-#
-apachectl restart
-service php_fpm restart
-service redis restart
-service mysql-server restart
+require_terminal() {
+	[ -t 0 ] && [ -t 1 ] || fail 'An interactive terminal is required for bootstrap, configuration and apply.'
+}
 
-# Create Nextcloud log directory
-mkdir -p /var/log/nextcloud/
-chown www:www /var/log/nextcloud
+confirm() {
+	require_terminal
+	printf '%s [y/N]: ' "$1" >&2
+	IFS= read -r reply || return 1
+	case "$reply" in y|Y|yes|YES|Yes) return 0 ;; *) return 1 ;; esac
+}
 
-#
-# Create Nextcloud database, secure database, set MariaDB root password, create Nextcloud DB, user, and password
-#
-mariadb -u root -e "DELETE FROM mysql.user WHERE User='';"
-mariadb -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
-mariadb -u root -e "DROP DATABASE IF EXISTS test;"
-mariadb -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-mariadb -u root -e "CREATE DATABASE ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-mariadb -u root -e "CREATE USER '${DB_USERNAME}'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';"
-mariadb -u root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USERNAME}'@'127.0.0.1';"
-mariadb -u root -e "FLUSH PRIVILEGES;"
-mariadb-admin --user=root password "${DB_ROOT_PASSWORD}" reload
+require_python() {
+	if ! command -v python3 >/dev/null 2>&1; then
+		if [ "${mode:-}" = menu ]; then
+			fail 'Python 3.11+ is required for the menu. Use explicit install or configure to review and consent to dependency bootstrap.'
+		fi
+		fail 'Python 3.11+ is required; this command does not install dependencies.'
+	fi
+	python3 -I -B -c 'import sys; sys.exit(sys.version_info < (3, 11))' \
+		|| fail 'Python 3.11+ is required; update an older Python separately.'
+}
 
-# The next two lines allow `root` to login to mysql> without a password
-sed -i '' "s|MYPASSWORD|${DB_ROOT_PASSWORD}|" "${PWD}/includes/root_my.cnf"
-cp -f "${PWD}/includes/root_my.cnf" /root/.my.cnf 
+bootstrap_python() {
+	# -N queries the base pkg shim without triggering automatic bootstrap.
+	if ! /usr/sbin/pkg -N >/dev/null 2>&1; then
+		bootstrap_consent 'Bootstrap missing pkg from FreeBSD-ports? Command: /usr/sbin/pkg bootstrap -y -r FreeBSD-ports' || fail 'pkg bootstrap declined.'
+		/usr/sbin/pkg bootstrap -y -r FreeBSD-ports
+	fi
+	if ! command -v python3 >/dev/null 2>&1; then
+		bootstrap_consent 'Install missing python3 and its dependencies from FreeBSD-ports? Command: pkg install -y -r FreeBSD-ports python3' \
+			|| fail 'Python installation declined.'
+		pkg install -y -r FreeBSD-ports python3
+	fi
+	require_python
+}
 
-#
-# CLI installation and configuration of Nextcloud
-#
-clear
-echo "Installing Nextcloud..."
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:install --database="mysql" --database-name="${DB_NAME}" --database-user="${DB_USERNAME}" --database-pass="${DB_PASSWORD}" --database-host="127.0.0.1" --admin-user="${ADMIN_USERNAME}" --admin-pass="${ADMIN_PASSWORD}" --data-dir="${DATA_DIRECTORY}"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-primary-keys
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-indices
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:add-missing-columns
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" db:convert-filecache-bigint --no-interaction
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:mimetype:update-db
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set allow_local_remote_servers --value=true --type=boolean
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set maintenance_window_start --value=1 --type=integer
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set default_phone_region --value="${COUNTRY_CODE}"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logtimezone --value="${TIME_ZONE}"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logdateformat --value="Y-m-d H:i:s T"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set log_type --value=file
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logfile --value="/var/log/nextcloud/${INSTANCE_NAME}.log"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set loglevel --value=2 --type=integer
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set logrotate_size --value=104847600 --type=integer
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set filelocking.enabled --value=true --type=boolean
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.local --value="\OC\Memcache\APCu"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set redis host --value=/var/run/redis/redis.sock
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set redis port --value=0 --type=integer
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.distributed --value="\OC\Memcache\Redis"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set memcache.locking --value="\OC\Memcache\Redis"
-if [ "$USE_HOSTNAME" = "true" ]; then
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 0 --value="${HOST_NAME}"
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwritehost --value="${HOST_NAME}"
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwrite.cli.url --value="https://${HOST_NAME}"
-else
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 0 --value="${IP_ADDRESS}"
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set trusted_domains 1 --value="${HOST_NAME}"
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwrite.cli.url --value="https://${IP_ADDRESS}"
-fi
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set overwriteprotocol --value=https
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set htaccess.RewriteBase --value=/
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" maintenance:update:htaccess
-# Set Nextcloud to use sendmail (you can change this later in the GUI)
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_smtpmode --value=sendmail
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_sendmailmode --value=pipe
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_domain --value="${HOST_NAME}"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:system:set mail_from_address --value="${SERVER_EMAIL}"
-# Disable contactsinteraction because the behaviour is unwanted, and confusing
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:disable contactsinteraction
-# Enable external storage support (Example: mount a SMB share in Nextcloud).
-# Users are not allowed to mount external storage, but can be allowed under Settings -> Admin -> External Storage
-if [ "$EXTERNAL_STORAGE" = "true" ]; then
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable files_external
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_external allow_user_mounting --value=no
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_external user_mounting_backends --value="ftp,dav,owncloud,sftp,amazons3,swift,smb,\\OC\\Files\\Storage\\SFTP_Key,\\OC\\Files\\Storage\\SMB_OC"
-fi
+bootstrap_consent() {
+	if [ "${assume_yes:-0}" -eq 1 ]; then
+		require_terminal
+		printf '%s (--yes approved)\n' "$1" >&2
+	else
+		confirm "$1"
+	fi
+}
 
-#
-# Install Nextcloud Featured Apps if  (alphabetical)
-#
-if [ "$INSTALL_APPS" = "true" ]; then
-	clear
-	echo "Nextcloud is now installed, installing recommended Apps..."
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install calendar
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install contacts
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install deck
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install mail
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install notes
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install spreed # Nextcloud Talk
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install tasks
-fi
+bootstrap_archive() {
+	# This self-contained, stdlib verifier must work before installer/ exists.
+	# stdout contains only the verified release directory; diagnostics use stderr.
+	python3 -I -B - "$archive_source" "$archive_sha256" <<'PY_ARCHIVE'
+import gzip
+import hashlib
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tarfile
+import tempfile
+from urllib.parse import urlsplit
 
-#
-# Install Antivirus for Files
-#
-clear
-echo "Now installing and configuring Antivirus for File using ClamAV..."
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:install files_antivirus
-### set correct value for path on FreeBSD and set default action
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_mode --value=socket
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_socket --value=/var/run/clamav/clamd.sock
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_stream_max_length --value=104857600 --type=integer
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set files_antivirus av_infected_action --value=only_log
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" config:app:set activity notify_notification_virus_detected --value=1 --type=integer
+CACHE = Path("/var/db/cloud-installer/downloads")
+MAX_ARCHIVE = 64 * 1024 * 1024
+MAX_EXPANDED = 256 * 1024 * 1024
+MAX_FILE = 32 * 1024 * 1024
+MAX_ENTRIES = 4096
+DIRECTORIES = {"installer", "resources", "docs", "examples", "tools"}
+ROOT_FILES = {"install.sh", "LICENSE", "pyproject.toml", "README.md"}
 
-#
-# SERVER SIDE ENCRYPTION 
-# Server-side encryption makes it possible to encrypt files which are uploaded to this server.
-# This comes with limitations like a performance penalty, so enable this only if needed.
-#
-if [ "$ENCRYPT_DATA" = "true" ]; then
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" app:enable encryption
-	mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" encryption:enable
-fi
 
-# Set Nextcloud to run maintenance tasks as a cron job
-sed -i '' "s|WWW_DIR|${WWW_DIR}|" "${PWD}/includes/www-crontab"
-sed -i '' "s|HOST_NAME|${HOST_NAME}|" "${PWD}/includes/www-crontab"
-mdo -u www php "${WWW_DIR}/${HOST_NAME}/occ" background:cron
-crontab -u www "${PWD}/includes/www-crontab"
+def copy_bounded(source, destination, limit):
+    total = 0
+    while True:
+        block = source.read(min(1024 * 1024, limit - total + 1))
+        if not block:
+            return total
+        total += len(block)
+        if total > limit:
+            raise ValueError("Release archive exceeds the size limit")
+        destination.write(block)
 
-# Create reference file
-if [ "$SSL_DIRECTORY" = "OFF" ]; then
-    cat >> "/root/${HOST_NAME}_reference.txt" <<EOL
-Nextcloud installation details:
-===============================
 
-Server address : http://${HOST_NAME} or http://${IP_ADDRESS}
-Data directory : ${DATA_DIRECTORY}
+def validate_source(source):
+    if any(ord(char) < 32 or ord(char) == 127 for char in source):
+        raise ValueError("Archive source contains a control character")
+    url = urlsplit(source)
+    if url.scheme or url.netloc:
+        if url.scheme != "https" or not url.hostname or url.username or url.password or url.fragment:
+            raise ValueError("Use an HTTPS archive URL without credentials or a local file path")
+        return True
+    if not source:
+        raise ValueError("An archive source is required")
+    return False
 
-Nextcloud GUI Login:
---------------------
-Username : ${ADMIN_USERNAME}
-Password : ${ADMIN_PASSWORD}
 
-MariaDB Information:
-------------------
-Database name     : ${DB_NAME}
-Database username : ${DB_USERNAME}
-Database password : ${DB_PASSWORD}
-DB root password  : ${DB_ROOT_PASSWORD}
+def private_cache(cache):
+    # Reject symlinks and writable ancestors before creating root-owned state.
+    for parent in reversed(cache.parent.parents):
+        info = parent.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+            raise ValueError("Archive cache ancestors must be root-owned directories without group/other writes")
+    for directory in (cache.parent, cache):
+        directory.mkdir(mode=0o700, exist_ok=True)
+        info = directory.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or stat.S_IMODE(info.st_mode) != 0o700:
+            raise ValueError("Archive cache directories must be root-owned, private (0700), and not symlinks")
 
-EOL
-else
-    cat >> "/root/${HOST_NAME}_reference.txt" <<EOL
-Nextcloud installation details:
-===============================
 
-Server address : https://${HOST_NAME} or https://${IP_ADDRESS}
-Data directory : ${DATA_DIRECTORY}
+def acquire(source, target):
+    if validate_source(source):
+        environment = {key: value for key, value in os.environ.items()
+                       if key not in ("SSL_NO_VERIFY_PEER", "SSL_NO_VERIFY_HOSTNAME", "SSL_ALLOW_SSL3")}
+        # fetch is in FreeBSD base; certificates are verified normally. Bound
+        # the stream before writing it, even when Content-Length is missing.
+        with subprocess.Popen(["/usr/bin/fetch", "-T", "60", "-o", "-", source],
+                              stdout=subprocess.PIPE, env=environment) as process:
+            try:
+                with target.open("xb") as output:
+                    copy_bounded(process.stdout, output, MAX_ARCHIVE)
+                if process.wait(timeout=65):
+                    raise ValueError("Archive download failed")
+            except BaseException:
+                process.kill()
+                process.wait()
+                raise
+    else:
+        descriptor = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(descriptor, "rb") as input_file:
+            if not stat.S_ISREG(os.fstat(input_file.fileno()).st_mode):
+                raise ValueError("Local archive must be a regular file")
+            with target.open("xb") as output:
+                copy_bounded(input_file, output, MAX_ARCHIVE)
 
-Nextcloud GUI Login:
---------------------
-Username : ${ADMIN_USERNAME}
-Password : ${ADMIN_PASSWORD}
 
-MariaDB Information:
-------------------
-Database name     : ${DB_NAME}
-Database username : ${DB_USERNAME}
-Database password : ${DB_PASSWORD}
-DB root password  : ${DB_ROOT_PASSWORD}
+def checked_members(archive):
+    members, names, expanded = [], {}, 0
+    for member in archive:
+        if len(members) >= MAX_ENTRIES:
+            raise ValueError("Release archive contains too many entries")
+        name = member.name.rstrip("/") if member.isdir() else member.name
+        parts = name.split("/")
+        if (len(name) > 1024 or not parts or parts[0] != "cloud-installer"
+                or any(part in ("", ".", "..") for part in parts) or "\\" in name
+                or any(ord(char) < 32 or ord(char) == 127 for char in name)):
+            raise ValueError("Unsafe release archive path")
+        if name in names:
+            raise ValueError("Duplicate release archive path")
+        if not (member.isfile() or member.isdir()) or member.sparse is not None:
+            raise ValueError("Release archive may contain only regular files and directories")
+        if len(parts) == 1 and not member.isdir():
+            raise ValueError("Release root must be a directory")
+        if len(parts) > 1 and parts[1] not in DIRECTORIES:
+            if len(parts) != 2 or parts[1] not in ROOT_FILES or not member.isfile():
+                raise ValueError("Unexpected path outside the release payload allowlist")
+        if member.size < 0 or member.size > MAX_FILE or (member.isdir() and member.size):
+            raise ValueError("Release member exceeds the size limit")
+        expanded += member.size
+        if expanded > MAX_EXPANDED:
+            raise ValueError("Expanded release exceeds the size limit")
+        names[name] = member
+        members.append((name, member))
+    # Keep the bootstrap minimum compatible with older verified artifacts used
+    # for original-artifact recovery; build-release.py enforces the current payload.
+    required = {"cloud-installer/" + name for name in
+                ("install.sh", "LICENSE", "pyproject.toml", "installer/__init__.py", "installer/main.py",
+                 "resources/versions.json")}
+    if not required.issubset(names) or any(not names[name].isfile() for name in required):
+        raise ValueError("Archive is not a complete cloud-installer release")
+    if not any(name.startswith("cloud-installer/resources/") and item.isfile() for name, item in members):
+        raise ValueError("Release runtime resources are missing")
+    for name, member in members:
+        for parent in PurePosixPath(name).parents:
+            if str(parent) in names and not names[str(parent)].isdir():
+                raise ValueError("Release archive has conflicting file/directory paths")
+    return members
 
-EOL
-fi
 
-#
-# All done!
-# Print copy of reference info to console.
-#
-clear
-echo "Installation Complete!"
-echo ""
-cat "/root/${HOST_NAME}_reference.txt"
-echo "These details have also been written to /root/${HOST_NAME}_reference.txt"
+def verify_and_extract(source, digest, destination):
+    """Verify the exact bytes before inspecting/extracting into a fresh directory."""
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+        raise ValueError("SHA256 must contain exactly 64 hexadecimal digits")
+    with source.open("rb") as stream:
+        if source.stat().st_size > MAX_ARCHIVE:
+            raise ValueError("Release archive exceeds the size limit")
+        actual = hashlib.file_digest(stream, "sha256").hexdigest()
+    if actual != digest.lower():
+        raise ValueError("Archive SHA256 mismatch; nothing was extracted or executed")
+    # Bound the decompressed TAR itself before tarfile parses extended headers.
+    # This also caps hostile gzip/PAX expansion, not just normal member sizes.
+    with tempfile.TemporaryFile(dir=destination) as unpacked:
+        with gzip.open(source, "rb") as compressed:
+            copy_bounded(compressed, unpacked, MAX_EXPANDED)
+        unpacked.seek(0)
+        with tarfile.open(fileobj=unpacked, mode="r:") as archive:
+            members = checked_members(archive)
+            for name, member in members:
+                target = destination / name
+                if member.isdir():
+                    target.mkdir(mode=0o700, parents=True, exist_ok=True)
+                    continue
+                target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+                with archive.extractfile(member) as input_file, target.open("xb") as output:
+                    if copy_bounded(input_file, output, member.size) != member.size:
+                        raise ValueError("Truncated release archive member")
+                target.chmod(0o700 if member.mode & 0o111 else 0o600)
+    return destination / "cloud-installer"
 
-# Run the Nextcloud background task for the first time
-mdo -u www /usr/local/bin/php -f "${WWW_DIR}/${HOST_NAME}/cron.php" &
+
+def bootstrap(source, digest):
+    validate_source(source)
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+        raise ValueError("SHA256 must contain exactly 64 hexadecimal digits")
+    private_cache(CACHE)
+    stage = Path(tempfile.mkdtemp(prefix=digest.lower()[:12] + "-", dir=CACHE))
+    try:
+        archive = stage / "release.tar.gz"
+        acquire(source, archive)
+        return verify_and_extract(archive, digest, stage)
+    except BaseException:
+        shutil.rmtree(stage)
+        raise
+
+
+if __name__ == "__main__":
+    try:
+        if os.geteuid() != 0 or not sys.platform.startswith("freebsd"):
+            raise ValueError("Archive bootstrap requires root on the FreeBSD host")
+        os.umask(0o077)
+        print(bootstrap(sys.argv[1], sys.argv[2]))
+    except KeyboardInterrupt:
+        print("Archive bootstrap cancelled.", file=sys.stderr)
+        raise SystemExit(130)
+    except (OSError, ValueError, tarfile.TarError, EOFError, subprocess.SubprocessError) as error:
+        print(f"Archive bootstrap failed: {error}", file=sys.stderr)
+        raise SystemExit(1)
+PY_ARCHIVE
+}
+
+launch_python() {
+	require_python
+	if [ -z "${script_dir:-}" ]; then
+		script_dir=$(CDPATH= cd -P "$(dirname "$0")" && pwd -P) || fail 'Cannot locate the installer.'
+	fi
+	[ -f "$script_dir/installer/main.py" ] || fail 'Installer payload missing; use a complete checkout or --archive and --sha256 with a supported explicit command; see --help.'
+	umask 077
+	ulimit -c 0
+	PYTHONDONTWRITEBYTECODE=1
+	export PYTHONDONTWRITEBYTECODE
+	# Keep the caller's cwd: plan, backup and restore paths remain meaningful.
+	# Isolated mode ignores user-site/PYTHONPATH code when running as root.
+	exec python3 -I -B -c 'import runpy, sys; sys.path.insert(0, sys.argv.pop(1)); sys.argv[0] = "install.sh"; runpy.run_module("installer.main", run_name="__main__")' "$script_dir" "$@"
+}
+
+main() {
+	# Help is always offline, including a standalone downloaded entrypoint.
+	for argument in "$@"; do
+		case "$argument" in -h|--help) usage; return ;; esac
+	done
+	archive_source= archive_sha256= plain=0 assume_yes=0 config_file=
+	# Remove bootstrap/global options without eval or losing quoted arguments.
+	remaining=$#
+	while [ "$remaining" -gt 0 ]; do
+		case "$1" in
+			--archive|--sha256)
+				[ "$remaining" -ge 2 ] && [ -n "$2" ] || fail 'An archive and its SHA256 each need a value.'
+				if [ "$1" = --archive ]; then
+					[ -z "$archive_source" ] || fail 'Specify --archive once.'
+					archive_source=$2
+				else
+					[ -z "$archive_sha256" ] || fail 'Specify --sha256 once.'
+					archive_sha256=$2
+				fi
+				shift 2; remaining=$((remaining - 2))
+				;;
+			--plain) plain=1; shift; remaining=$((remaining - 1)) ;;
+			*) set -- "$@" "$1"; shift; remaining=$((remaining - 1)) ;;
+		esac
+	done
+	# Validate only the bootstrap routing shape; the Python parser owns the CLI.
+	[ "$#" -eq 0 ] || [ -n "$1" ] || fail 'Unexpected empty command.'
+	mode=${1:-menu}
+	case "$mode" in
+		menu) [ "$#" -eq 0 ] || fail 'Open the menu with: sh install.sh [--plain]' ;;
+		install|configure|--configure-only)
+			# Rotate only the validated recipe options, preserving quoted argv and cwd.
+			seen_licenses=0 seen_acme=0
+			remaining=$(( $# - 1 ))
+			set -- "$@" "$1"; shift
+			while [ "$remaining" -gt 0 ]; do
+				case "$1" in
+					--config)
+						[ "$remaining" -ge 2 ] && [ -n "$2" ] && [ -z "$config_file" ] || fail 'Specify --config FILE once.'
+						case "$2" in --*) fail 'Specify --config FILE.' ;; esac
+						config_file=$2
+						set -- "$@" "$1" "$2"; shift 2; remaining=$((remaining - 2)) ;;
+					--config=*)
+						[ -z "$config_file" ] && [ -n "${1#--config=}" ] || fail 'Specify --config FILE once.'
+						config_file=${1#--config=}
+						set -- "$@" "$1"; shift; remaining=$((remaining - 1)) ;;
+					--yes)
+						[ "$mode" = install ] && [ "$assume_yes" -eq 0 ] || fail '--yes is install-only and may be specified once.'
+						assume_yes=1
+						set -- "$@" "$1"; shift; remaining=$((remaining - 1)) ;;
+					--accept-licenses)
+						[ "$mode" = install ] && [ "$seen_licenses" -eq 0 ] || fail '--accept-licenses is install-only and may be specified once.'
+						seen_licenses=1
+						set -- "$@" "$1"; shift; remaining=$((remaining - 1)) ;;
+					--accept-acme-terms)
+						[ "$mode" = install ] && [ "$seen_acme" -eq 0 ] || fail '--accept-acme-terms is install-only and may be specified once.'
+						seen_acme=1
+						set -- "$@" "$1"; shift; remaining=$((remaining - 1)) ;;
+					*) fail 'Unexpected recipe arguments.' ;;
+				esac
+			done
+			if [ "$assume_yes$seen_licenses$seen_acme" != 000 ]; then
+				[ -n "$config_file" ] || fail 'Install consent flags require --config FILE.'
+			fi
+			if [ -n "$config_file" ]; then
+				[ -f "$config_file" ] && [ -r "$config_file" ] && [ ! -L "$config_file" ] || fail 'Configuration must be a readable regular file, not a symlink.'
+			fi
+			;;
+		list|recover-network) [ "$#" -eq 1 ] || fail 'Unexpected command arguments.' ;;
+		plan|--plan|resume|status|verify|--verify|add-user|recover-install)
+			[ "$#" -eq 2 ] && [ -n "$2" ] || fail 'This command requires one file or instance.' ;;
+		resolve) [ "$#" -ge 2 ] && [ -n "$2" ] || fail 'Usage: resolve FILE [--metadata FILE] [--installed PLAN]' ;;
+		check-updates|check-security) : ;; # Python validates the inspection target and detailed flags.
+		upgrade) [ "$#" -ge 2 ] && [ -n "$2" ] || fail 'Usage: upgrade INSTANCE [--nextcloud VERSION] [--plan | --verify | --restore SNAPSHOT_REPORT] [--skip-packages]' ;;
+		maintenance)
+			case "${2:-}" in
+				register) [ "$#" -eq 3 ] && [ -n "$3" ] || fail 'Usage: maintenance register NAME'
+					case "$3" in [a-z]*) ;; *) fail 'Invalid instance name.' ;; esac
+					case "$3" in *[!a-z0-9]*|?????????*) fail 'Invalid instance name.' ;; esac ;;
+				plan|stage|prepare-target|continue|cancel|status|recover|apply) : ;; # Python validates detailed flags, without bootstrap.
+				*) fail 'Usage: maintenance register | plan | stage | prepare-target | continue | cancel | status | recover | apply' ;;
+			esac ;;
+		remove)
+			[ "$#" -ge 2 ] && [ -n "$2" ] || fail 'Usage: remove INSTANCE [--purge-data]'
+			[ "$#" -eq 2 ] || { [ "$#" -eq 3 ] && [ "$3" = --purge-data ]; } || fail 'Usage: remove INSTANCE [--purge-data]' ;;
+		backup)
+			[ "$#" -ge 2 ] && [ -n "$2" ] || fail 'Usage: backup INSTANCE [--output PATH]'
+			[ "$#" -eq 2 ] || { [ "$#" -eq 4 ] && [ "$3" = --output ] && [ -n "$4" ]; } || fail 'Usage: backup INSTANCE [--output PATH]' ;;
+		restore) [ "$#" -eq 3 ] && [ -n "$2" ] && [ -n "$3" ] || fail 'Usage: restore INSTANCE BACKUP' ;;
+		*) usage >&2; fail 'Unknown command.' ;;
+	esac
+	case "$mode" in
+		resume|status|verify|--verify|add-user|recover-install|remove|backup|restore|upgrade)
+			case "$2" in [a-z]*) ;; *) fail 'Invalid instance name.' ;; esac
+			case "$2" in *[!a-z0-9]*|?????????*) fail 'Invalid instance name.' ;; esac
+			;;
+	esac
+	if [ -n "$archive_source$archive_sha256" ]; then
+		[ -n "$archive_source" ] && [ "${#archive_sha256}" -eq 64 ] || fail 'Supply both --archive and its trusted 64-digit --sha256.'
+		case "$archive_sha256" in *[!a-fA-F0-9]*) fail 'Invalid SHA256 digest.' ;; esac
+		case "$archive_source" in https://?*) ;; *://*|-*|//*|https:*) fail 'Archive URL must use HTTPS; otherwise use a local file path.' ;; esac
+		case "$mode" in
+			menu|list|status|check-updates|check-security|maintenance|upgrade|plan|--plan|resolve)
+				fail 'Menu, list, status, check-updates, check-security, maintenance, upgrade, plan and resolve require an already unpacked checkout/release; archive acquisition is unavailable for these commands.' ;;
+		esac
+	fi
+	if [ "$plain" -eq 1 ]; then
+		CLOUD_INSTALLER_PLAIN=1
+		export CLOUD_INSTALLER_PLAIN
+		set -- --plain "$@"
+	fi
+	script_dir=$(CDPATH= cd -P "$(dirname "$0")" && pwd -P) || fail 'Cannot locate the installer.'
+	case "$mode" in
+		resolve)
+			[ -z "$archive_source" ] || fail 'Version assessment requires an already unpacked artifact.'
+			for argument in "$@"; do
+				if [ "$argument" = --metadata ]; then launch_python "$@"; return; fi
+			done
+			;;
+		plan|--plan)
+			[ -z "$archive_source" ] || fail 'Offline planning requires an already unpacked checkout/release; no downloads are performed.'
+			launch_python "$@"
+			return
+			;;
+	esac
+	PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+	export PATH
+	require_host
+	if [ ! -f "$script_dir/installer/main.py" ] && [ -z "$archive_source" ]; then
+		fail 'Installer payload missing. Use a complete checkout or --archive HTTPS_URL_OR_LOCAL_FILE --sha256 TRUSTED_DIGEST with a supported explicit command; see --help.'
+	fi
+	# A lifecycle host must be checked before package/bootstrap/archive writes.
+	# Offline plan/resolve have already returned and remain independent of host state.
+	if [ -e /var/db/cloud-installer/lifecycle ] || [ -L /var/db/cloud-installer/lifecycle ] \
+		|| [ -e /var/db/cloud-installer/maintenance/pending.json ] || [ -L /var/db/cloud-installer/maintenance/pending.json ]; then
+		require_python
+		[ -z "$archive_source" ] || fail 'Lifecycle hosts require their retained unpacked manager; historical archive dispatch is unsupported.'
+		python3 -I -B -c 'import sys; sys.path.insert(0, sys.argv[1]); from installer.maintenance import entry_guard; entry_guard(sys.argv[2])' "$script_dir" "$mode" \
+			|| fail 'Lifecycle state requires its matching manager or explicit enrollment recovery; no bootstrap performed.'
+	fi
+	case "$mode" in
+		install|configure|--configure-only|resume)
+			require_terminal
+			if [ -f "$script_dir/resources/versions.json" ]; then
+				bootstrap_python
+			else
+				require_python
+			fi
+			;;
+		remove|restore|add-user|recover-install|recover-network) require_terminal; require_python ;;
+		upgrade) require_python ;; # Native host guards apply even to --plan; never bootstrap pkg/Python.
+		*) require_python ;;
+	esac
+	if [ -n "$archive_source" ]; then
+		confirm 'Verify and unpack the supplied archive in the private /var/db/cloud-installer/downloads cache?' \
+			|| fail 'Archive bootstrap declined.'
+		umask 077
+		script_dir=$(bootstrap_archive) || fail 'Verified archive bootstrap did not complete.'
+		printf 'Verified release ready: %s\n' "$script_dir" >&2
+	fi
+	launch_python "$@"
+}
+
+main "$@"

@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "legacy_target": "15.1-RELEASE/amd64",
+  "defaults": {
+    "freebsd_release": "15.1-RELEASE",
+    "architecture": "amd64",
+    "nextcloud_min": "35.0.0",
+    "onlyoffice_min": "9.4.0",
+    "nextcloud_exact": "",
+    "onlyoffice_exact": ""
+  },
+  "targets": [
+    {
+      "release": "15.1-RELEASE", "architecture": "amd64", "abi": "FreeBSD:15:amd64",
+      "pkgbase_keys": ["/usr/share/keys/pkgbase-15/trusted/awskms-15", "/usr/share/keys/pkgbase-15/trusted/backup-signing-15"]
+    }
+  ],
+  "fonts": {"catalog": "packages/fonts.txt"},
+  "profiles": [
+    {
+      "id": "nc35-oo94-php85-mariadb123",
+      "targets": ["15.1-RELEASE/amd64"],
+      "applications": {
+        "nextcloud": {"family": "35"},
+        "onlyoffice": {"family": "9.4"}
+      },
+      "connector": {
+        "version": {"family": "10.2"},
+        "nextcloud": {"min": "33.0.0", "max_exclusive": "36.0.0"},
+        "php": {"min": "8.2.0", "max_exclusive": "8.6.0"}
+      },
+      "onlyoffice_runtime": "native-community-memory-embedded",
+      "dependency_policy": "exact-repository-closure",
+      "php_suffix": "85",
+      "roles": {
+        "manager": {"package": "bastille", "origin": "sysutils/bastille", "groups": ["host"], "range": {"family": "1.4"}},
+        "php": {"package": "php85", "origin": "lang/php85", "groups": ["nextcloud"], "range": {"min": "8.5.0", "max_exclusive": "8.6.0"}},
+        "database": {"package": "mariadb123-server", "origin": "databases/mariadb123-server", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "database_client": {"package": "mariadb123-client", "origin": "databases/mariadb123-client", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "web": {"package": "apache24", "origin": "www/apache24", "groups": ["nextcloud"], "range": {"min": "2.4.0", "max_exclusive": "2.5.0"}},
+        "cache": {"package": "redis", "origin": "databases/redis", "groups": ["nextcloud"], "range": {"min": "4.0.0", "max_exclusive": "9.0.0"}},
+        "onlyoffice": {"package": "onlyoffice-documentserver", "origin": "www/onlyoffice-documentserver", "groups": ["onlyoffice"], "range": {"family": "9.4"}}
+      },
+      "roots": {
+        "host": [],
+        "nextcloud": ["gnupg", "python3"],
+        "onlyoffice": ["python3", "fontconfig", "dns/c-ares", "devel/libuv"]
+      },
+      "php_extensions": [
+        "php{suffix}-bcmath", "php{suffix}-bz2", "php{suffix}-ctype",
+        "php{suffix}-curl", "php{suffix}-dom", "php{suffix}-exif",
+        "php{suffix}-fileinfo", "php{suffix}-filter", "php{suffix}-gd",
+        "php{suffix}-gmp", "php{suffix}-iconv", "php{suffix}-intl",
+        "php{suffix}-mbstring", "php{suffix}-pcntl", "php{suffix}-pdo",
+        "php{suffix}-pdo_mysql", "php{suffix}-pecl-APCu",
+        "php{suffix}-pecl-imagick", "php{suffix}-pecl-redis",
+        "php{suffix}-phar", "php{suffix}-posix", "php{suffix}-session",
+        "php{suffix}-sodium", "php{suffix}-simplexml", "php{suffix}-sysvsem",
+        "php{suffix}-xml", "php{suffix}-xmlreader", "php{suffix}-xmlwriter",
+        "php{suffix}-zip", "php{suffix}-zlib"
+      ],
+      "extension_ranges": {
+        "php{suffix}-pecl-APCu": {"min": "4.0.6", "max_exclusive": "6.0.0"},
+        "php{suffix}-pecl-redis": {"min": "2.2.6", "max_exclusive": "7.0.0"}
+      },
+      "optional_roots": {
+        "acme": {"nextcloud": ["security/py-certbot"]},
+        "zsh": {"nextcloud": ["zsh"], "onlyoffice": ["zsh"]},
+        "ssh_admin": {"nextcloud": ["doas"], "onlyoffice": ["doas"]},
+        "antivirus": {"nextcloud": ["security/clamav"]}
+      }
+    },
+    {
+      "id": "nc35-none-php85-mariadb123",
+      "office_backend": "none",
+      "targets": ["15.1-RELEASE/amd64"],
+      "applications": {
+        "nextcloud": {"family": "35"}
+      },
+      "dependency_policy": "exact-repository-closure",
+      "php_suffix": "85",
+      "roles": {
+        "manager": {"package": "bastille", "origin": "sysutils/bastille", "groups": ["host"], "range": {"family": "1.4"}},
+        "php": {"package": "php85", "origin": "lang/php85", "groups": ["nextcloud"], "range": {"min": "8.5.0", "max_exclusive": "8.6.0"}},
+        "database": {"package": "mariadb123-server", "origin": "databases/mariadb123-server", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "database_client": {"package": "mariadb123-client", "origin": "databases/mariadb123-client", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "web": {"package": "apache24", "origin": "www/apache24", "groups": ["nextcloud"], "range": {"min": "2.4.0", "max_exclusive": "2.5.0"}},
+        "cache": {"package": "redis", "origin": "databases/redis", "groups": ["nextcloud"], "range": {"min": "4.0.0", "max_exclusive": "9.0.0"}}
+      },
+      "roots": {
+        "host": [],
+        "nextcloud": ["gnupg", "python3"]
+      },
+      "php_extensions": [
+        "php{suffix}-bcmath", "php{suffix}-bz2", "php{suffix}-ctype",
+        "php{suffix}-curl", "php{suffix}-dom", "php{suffix}-exif",
+        "php{suffix}-fileinfo", "php{suffix}-filter", "php{suffix}-gd",
+        "php{suffix}-gmp", "php{suffix}-iconv", "php{suffix}-intl",
+        "php{suffix}-mbstring", "php{suffix}-pcntl", "php{suffix}-pdo",
+        "php{suffix}-pdo_mysql", "php{suffix}-pecl-APCu",
+        "php{suffix}-pecl-imagick", "php{suffix}-pecl-redis",
+        "php{suffix}-phar", "php{suffix}-posix", "php{suffix}-session",
+        "php{suffix}-sodium", "php{suffix}-simplexml", "php{suffix}-sysvsem",
+        "php{suffix}-xml", "php{suffix}-xmlreader", "php{suffix}-xmlwriter",
+        "php{suffix}-zip", "php{suffix}-zlib"
+      ],
+      "extension_ranges": {
+        "php{suffix}-pecl-APCu": {"min": "4.0.6", "max_exclusive": "6.0.0"},
+        "php{suffix}-pecl-redis": {"min": "2.2.6", "max_exclusive": "7.0.0"}
+      },
+      "optional_roots": {
+        "acme": {"nextcloud": ["security/py-certbot"]},
+        "zsh": {"nextcloud": ["zsh"]},
+        "ssh_admin": {"nextcloud": ["doas"]},
+        "antivirus": {"nextcloud": ["security/clamav"]}
+      }
+    },
+    {
+      "id": "nc35-euro935-alpine324-php85-mariadb123",
+      "office_backend": "eurooffice",
+      "targets": ["15.1-RELEASE/amd64"],
+      "applications": {"nextcloud": {"family": "35"}},
+      "connector": {
+        "app_id": "eurooffice", "version": {"family": "11.0"},
+        "nextcloud": {"min": "33.0.0", "max_exclusive": "37.0.0"}, "php_manifest": "*"
+      },
+      "dependency_policy": "exact-repository-closure",
+      "php_suffix": "85",
+      "roles": {
+        "manager": {"package": "bastille", "origin": "sysutils/bastille", "groups": ["host"], "range": {"family": "1.4"}},
+        "php": {"package": "php85", "origin": "lang/php85", "groups": ["nextcloud"], "range": {"min": "8.5.0", "max_exclusive": "8.6.0"}},
+        "database": {"package": "mariadb123-server", "origin": "databases/mariadb123-server", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "database_client": {"package": "mariadb123-client", "origin": "databases/mariadb123-client", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "web": {"package": "apache24", "origin": "www/apache24", "groups": ["nextcloud"], "range": {"min": "2.4.0", "max_exclusive": "2.5.0"}},
+        "cache": {"package": "redis", "origin": "databases/redis", "groups": ["nextcloud"], "range": {"min": "4.0.0", "max_exclusive": "9.0.0"}},
+        "vm_manager": {"package": "vm-bhyve", "origin": "sysutils/vm-bhyve", "groups": ["host"], "range": {"family": "1.7"}},
+        "vm_image_tools": {"package": "qemu-tools", "origin": "emulators/qemu", "groups": ["host"], "range": {"family": "11.1"}},
+        "vm_firmware": {"package": "edk2-bhyve", "origin": "sysutils/edk2", "groups": ["host"], "version_exact": "g202508_3"}
+      },
+      "roots": {"host": [], "nextcloud": ["gnupg", "python3"]},
+      "php_extensions": [
+        "php{suffix}-bcmath", "php{suffix}-bz2", "php{suffix}-ctype", "php{suffix}-curl",
+        "php{suffix}-dom", "php{suffix}-exif", "php{suffix}-fileinfo", "php{suffix}-filter",
+        "php{suffix}-gd", "php{suffix}-gmp", "php{suffix}-iconv", "php{suffix}-intl",
+        "php{suffix}-mbstring", "php{suffix}-pcntl", "php{suffix}-pdo", "php{suffix}-pdo_mysql",
+        "php{suffix}-pecl-APCu", "php{suffix}-pecl-imagick", "php{suffix}-pecl-redis",
+        "php{suffix}-phar", "php{suffix}-posix", "php{suffix}-session", "php{suffix}-sodium",
+        "php{suffix}-simplexml", "php{suffix}-sysvsem", "php{suffix}-xml", "php{suffix}-xmlreader",
+        "php{suffix}-xmlwriter", "php{suffix}-zip", "php{suffix}-zlib"
+      ],
+      "extension_ranges": {
+        "php{suffix}-pecl-APCu": {"min": "4.0.6", "max_exclusive": "6.0.0"},
+        "php{suffix}-pecl-redis": {"min": "2.2.6", "max_exclusive": "7.0.0"}
+      },
+      "optional_roots": {
+        "acme": {"nextcloud": ["security/py-certbot"]}, "zsh": {"nextcloud": ["zsh"]},
+        "ssh_admin": {"nextcloud": ["doas"]}, "antivirus": {"nextcloud": ["security/clamav"]}
+      },
+      "office_runtime": {
+        "resources": {
+          "minimum": {"cpus": 2, "memory_mb": 4096, "disk_gib": 16},
+          "defaults": {"cpus": 2, "memory_mb": 4096, "disk_gib": 16}
+        },
+        "guest_image": {
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-x86_64-cloudinit-r2.qcow2",
+          "sha512": "6b9928cea1c6243affb8a9b09eba6046cd090e8bdb7141fbf0c8f2649c4a99d62e12cda289da41f99de82ce2b3e3780772dd594eaee3693cb49691d81cbe5d4b",
+          "architecture": "x86_64", "firmware": "limine", "bootstrap": "cloudinit", "alpine_branch": "3.24"
+        },
+        "container": {
+          "reference": "ghcr.io/euro-office/documentserver@sha256:0fa0b4e262b109814b906d6e40e14de6647b1fdcd7881b64e794c1a01677ebc6",
+          "index_digest": "sha256:b303064a69d0a4f81ba5945126c4c484fc08bf42436fc97bb85413429e27ba9e",
+          "release": "9.3.5", "architecture": "amd64", "frontend_port": 80, "guest_port": 8081,
+          "entrypoint_sha256": "8f1ef69bc4dd29ebce6973d9ba00f66aecd9e0a25043311be71db91d098e4dba"
+        }
+      },
+      "evidence": [
+        {"url": "https://github.com/Euro-Office/DocumentServer/blob/v9.3.5/build/scripts/standalone/entrypoint.sh", "reviewed": "2026-10-20", "scope": "Digest-verified pinned OCI layers5-8: /entrypoint.sh SHA2568f1ef69bc4dd29ebce6973d9ba00f66aecd9e0a25043311be71db91d098e4dba exactly matches tagged standalone script. Data/.private secrets, PostgreSQL/RabbitMQ/runtime/log persistence, JWT_HEADER, private callback and example-disabled settings reviewed. No full image pull/container execution/editor acceptance."},
+        {"url": "https://github.com/Euro-Office/eurooffice-nextcloud/blob/v11.0.6/appinfo/info.xml", "reviewed": "2026-10-19", "scope": "Signed eurooffice11.0.6 on the NC35.0.1 App Store feed; tagged manifest NC33-36 and no declared PHP requirement. Shared profile independently limits PHP8.5. New VM/proxy/editor integration remains unavailable, not operationally accepted."},
+        {"url": "https://github.com/Euro-Office/DocumentServer/releases/tag/v9.3.5", "reviewed": "2026-10-19", "scope": "Published standalone linux/amd64 OCI digest has PRODUCT_VERSION9.3.5 history, consistent with source tag. OS label24.04 is not the application version. Container package/runtime, persistence and browser-save acceptance unrun."},
+        {"url": "https://euro-office.github.io/documentation/installation/docker/", "reviewed": "2026-10-19", "scope": "Standalone frontend80, JWT required, example disabled; container-supplied fonts/features only. Native VM provisioning is still blocked. Image retrieval never uses the documentation's mutable latest example."},
+        {"url": "https://github.com/freebsd/vm-bhyve/blob/v1.7.5/vm.8", "reviewed": "2026-10-19", "scope": "Signed FreeBSD15.1 vm-bhyve1.7.5/qemu-tools11.1.2_1/edk2-bhyve g202508_3 and Alpine3.24.2 cloud-init component boot/growth/SSH/Docker/reboot tested. Corrected-seed clean first boot still unrun; not full backend acceptance."}
+      ]
+    },
+    {
+      "id": "nc35-code2604-alpine324-php85-mariadb123",
+      "office_backend": "collabora",
+      "targets": ["15.1-RELEASE/amd64"],
+      "applications": {"nextcloud": {"family": "35"}},
+      "connector": {
+        "app_id": "richdocuments", "version": {"family": "12.0"},
+        "nextcloud": {"min": "35.0.0", "max_exclusive": "36.0.0"}, "php_manifest": ">=8.3.0"
+      },
+      "dependency_policy": "exact-repository-closure",
+      "php_suffix": "85",
+      "roles": {
+        "manager": {"package": "bastille", "origin": "sysutils/bastille", "groups": ["host"], "range": {"family": "1.4"}},
+        "php": {"package": "php85", "origin": "lang/php85", "groups": ["nextcloud"], "range": {"min": "8.5.0", "max_exclusive": "8.6.0"}},
+        "database": {"package": "mariadb123-server", "origin": "databases/mariadb123-server", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "database_client": {"package": "mariadb123-client", "origin": "databases/mariadb123-client", "groups": ["nextcloud"], "range": {"min": "12.3.0", "max_exclusive": "12.4.0"}},
+        "web": {"package": "apache24", "origin": "www/apache24", "groups": ["nextcloud"], "range": {"min": "2.4.0", "max_exclusive": "2.5.0"}},
+        "cache": {"package": "redis", "origin": "databases/redis", "groups": ["nextcloud"], "range": {"min": "4.0.0", "max_exclusive": "9.0.0"}},
+        "vm_manager": {"package": "vm-bhyve", "origin": "sysutils/vm-bhyve", "groups": ["host"], "range": {"family": "1.7"}},
+        "vm_image_tools": {"package": "qemu-tools", "origin": "emulators/qemu", "groups": ["host"], "range": {"family": "11.1"}},
+        "vm_firmware": {"package": "edk2-bhyve", "origin": "sysutils/edk2", "groups": ["host"], "version_exact": "g202508_3"}
+      },
+      "roots": {"host": [], "nextcloud": ["gnupg", "python3"]},
+      "php_extensions": [
+        "php{suffix}-bcmath", "php{suffix}-bz2", "php{suffix}-ctype", "php{suffix}-curl",
+        "php{suffix}-dom", "php{suffix}-exif", "php{suffix}-fileinfo", "php{suffix}-filter",
+        "php{suffix}-gd", "php{suffix}-gmp", "php{suffix}-iconv", "php{suffix}-intl",
+        "php{suffix}-mbstring", "php{suffix}-pcntl", "php{suffix}-pdo", "php{suffix}-pdo_mysql",
+        "php{suffix}-pecl-APCu", "php{suffix}-pecl-imagick", "php{suffix}-pecl-redis",
+        "php{suffix}-phar", "php{suffix}-posix", "php{suffix}-session", "php{suffix}-sodium",
+        "php{suffix}-simplexml", "php{suffix}-sysvsem", "php{suffix}-xml", "php{suffix}-xmlreader",
+        "php{suffix}-xmlwriter", "php{suffix}-zip", "php{suffix}-zlib"
+      ],
+      "extension_ranges": {
+        "php{suffix}-pecl-APCu": {"min": "4.0.6", "max_exclusive": "6.0.0"},
+        "php{suffix}-pecl-redis": {"min": "2.2.6", "max_exclusive": "7.0.0"}
+      },
+      "optional_roots": {
+        "acme": {"nextcloud": ["security/py-certbot"]}, "zsh": {"nextcloud": ["zsh"]},
+        "ssh_admin": {"nextcloud": ["doas"]}, "antivirus": {"nextcloud": ["security/clamav"]}
+      },
+      "office_runtime": {
+        "resources": {
+          "minimum": {"cpus": 2, "memory_mb": 4096, "disk_gib": 16},
+          "defaults": {"cpus": 2, "memory_mb": 4096, "disk_gib": 16}
+        },
+        "guest_image": {
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-x86_64-cloudinit-r2.qcow2",
+          "sha512": "6b9928cea1c6243affb8a9b09eba6046cd090e8bdb7141fbf0c8f2649c4a99d62e12cda289da41f99de82ce2b3e3780772dd594eaee3693cb49691d81cbe5d4b",
+          "architecture": "x86_64", "firmware": "limine", "bootstrap": "cloudinit", "alpine_branch": "3.24"
+        },
+        "container": {
+          "reference": "docker.io/collabora/code@sha256:56541aad09403975646dfb87a3716e38afecce09b5f853391eb6d937a0ccd402",
+          "index_digest": "sha256:bb8f3c9c5c9016045f25fccb5f0649be94469ebc7c7cc379f3576e470cccf33d",
+          "release": "26.04.5.1.1", "product_version": "26.04.5.1", "architecture": "amd64", "frontend_port": 9980, "guest_port": 8081,
+          "configuration_sha256": "a2ad2ece4c4ce045b4f6b01d9a7fadccc5d8353343db3e99ff60b740de888cee"
+        }
+      },
+      "evidence": [
+        {"url": "https://github.com/nextcloud/richdocuments/blob/v12.0.1/appinfo/info.xml", "reviewed": "2026-10-19", "scope": "Signed richdocuments12.0.1 on NC35.0.1 App Store feed; tagged manifest NC35 and PHP>=8.3, no declared PHP ceiling. Profile independently bounds PHP8.5. No embedded richdocumentscode server on FreeBSD."},
+        {"url": "https://hub.docker.com/v2/repositories/collabora/code/tags/26.04.5.1.1", "reviewed": "2026-10-20", "scope": "Pinned linux/amd64 CODE starts coolwsd as UID1001, shell-free. Native Alpine/bhyve/Docker component served288 discovery actions and productVersion26.04.5.1, distinct from tag26.04.5.1.1. Reviewed strict XML; no added caps/privileged settings. Optional shell metadata query failed; separate shell-free query confirms Seccomp2 but proof-key absent. NC/WOPI/editor and product-path reboot acceptance unrun. SDK anti-bot/source-login responses were not proof."},
+        {"url": "https://github.com/nextcloud/richdocuments/blob/v12.0.1/lib/Command/ActivateConfig.php", "reviewed": "2026-10-19", "scope": "activate-config is a mutating installation action; specify internal WOPI and callback deliberately, inspect resulting public URL, never activate during verify."},
+        {"url": "https://github.com/freebsd/vm-bhyve/blob/v1.7.5/vm.8", "reviewed": "2026-10-19", "scope": "Same reviewed signed host tooling and Alpine/cloud-init guest branch as Euro-Office. Guest component boot/growth/SSH/Docker/reboot tested; corrected-seed clean first boot and CODE integration remain unrun."}
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "url": "https://github.com/nextcloud/server/blob/v35.0.1/lib/versioncheck.php",
+      "reviewed": "2026-10-22",
+      "scope": "Fresh-install family policy permits stable NC35 with the independently bounded PHP8.5/MariaDB12.3 package profile. The tagged PHP gate is >=8.3 and <8.6. Family eligibility is not native acceptance of future patches: display unverified-combination warnings before APPLY; manifests, signed dependencies and runtime layout guards still block incompatible selections. Existing locks and upgrade edges do not change."
+    },
+    {
+      "url": "https://docs.freebsd.org/en/books/porters-handbook/makefiles/#makefile-portrevision",
+      "reviewed": "2026-10-22",
+      "scope": "Numeric family restrictions compare upstream components independently of PORTREVISION and PORTEPOCH. Native pkg remains authoritative for the configured signed catalog and solver; full versions, origins, dependency edges and checksums are retained exactly. Opaque firmware and external image/container artifacts remain pinned."
+    },
+    {
+      "url": "https://pkg.FreeBSD.org/FreeBSD:15:amd64/latest/",
+      "reviewed": "2026-10-15",
+      "scope": "Native signed ONLYOFFICE 9.4.0_4 package requires libcares.so.2 and libuv.so.1 outside its declared dependency edges. Explicit roots dns/c-ares (1.34.8) and devel/libuv (1.52.1) match the signed catalog providers and native solver. Exact versions/checksums are selected into each new lock; solver additions must fail before provisioning. No existing lock is amended."
+    },
+    {
+      "url": "https://github.com/BastilleBSD/bastille/blob/1.4.4/usr/local/share/bastille/bootstrap.sh",
+      "reviewed": "2026-10-14",
+      "scope": "Pkgbase bootstrap installs the base-jail set into the release root; thick creation copies its package database. FreeBSD-* packages with matching base/FreeBSD-* origins are separate OS inventory, not application dependencies. No OS upgrade is authorized by the application lock."
+    },
+    {
+      "url": "https://github.com/freebsd/freebsd-src/blob/releng/15.1/release/packages/template.ucl",
+      "reviewed": "2026-10-14",
+      "scope": "Native base package origin is base/${PKG_NAME_PREFIX}-${PKGNAME}; distinguish exact reserved name/origin pairs from unselected ports."
+    },
+    {
+      "url": "https://docs.nextcloud.com/server/35/admin_manual/configuration_server/caching_configuration.html",
+      "reviewed": "2026-10-14",
+      "scope": "NC requires Redis >=4.0.0 and phpredis >=2.2.6. This profile limits Redis to pre-9 releases; future major service/layout changes require review. The FreeBSD redis port is currently 8.10.2."
+    },
+    {
+      "url": "https://docs.nextcloud.com/server/35/admin_manual/installation/system_requirements.html",
+      "reviewed": "2026-10-14",
+      "scope": "Reviewed NC 35.0.0/35.0.1 only. Broader upstream PHP/database support does not extend this installer's PHP 8.5/MariaDB 12.3 profile. FreeBSD is not an upstream-listed server OS."
+    },
+    {
+      "url": "https://github.com/freebsd/freebsd-ports/blob/main/lang/php85/Makefile",
+      "reviewed": "2026-10-14",
+      "scope": "PHP 8.5 CLI/FPM and built-in OPcache; extension names retained from the reviewed installer catalog. PECL extension versions come from the exact dependency graph."
+    },
+    {
+      "url": "https://github.com/freebsd/freebsd-ports/blob/main/databases/mariadb123-server/Makefile",
+      "reviewed": "2026-10-14",
+      "scope": "Matching MariaDB 12.3 server/client package family and native rc layout."
+    },
+    {
+      "url": "https://github.com/freebsd/freebsd-ports/blob/main/www/onlyoffice-documentserver/Makefile",
+      "reviewed": "2026-10-14",
+      "scope": "Reviewed native ONLYOFFICE 9.4.0_4 (component build 129); package revisions retain runtime layout checks. nginx/Supervisor use exact dependencies. Upstream 10.0 security-fix backports are unverified: compatibility is not a security claim."
+    },
+    {
+      "url": "https://github.com/ONLYOFFICE/server/blob/v9.4.0.129/Common/sources/runtime/profile.js",
+      "reviewed": "2026-10-14",
+      "scope": "Community 9.4 uses memory state and embedded conversion; no separate database, queue or converter service."
+    },
+    {
+      "url": "https://github.com/BastilleBSD/bastille/releases/tag/1.4.4",
+      "reviewed": "2026-10-14",
+      "scope": "Bastille 1.4.4 is the reviewed command-layout baseline. Fresh-install 1.4 patch versions remain subject to ownership, command and boot checks; family eligibility does not claim independent native validation."
+    },
+    {
+      "url": "https://github.com/ONLYOFFICE/onlyoffice-nextcloud/blob/v10.2.1/appinfo/info.xml",
+      "reviewed": "2026-10-14",
+      "scope": "Connector 10.2.1 manifest permits NC33-35 and PHP8.2-8.5; only the reviewed installer profile is selected."
+    },
+    {
+      "url": "https://apps.nextcloud.com/api/v1/platform/35.0.1/apps.json",
+      "reviewed": "2026-10-14",
+      "scope": "Stable signed ONLYOFFICE connector 10.2.1; Nextcloud's native app installer must verify the downloaded archive signature before any migrations."
+    },
+    {
+      "url": "https://github.com/nextcloud/server/blob/v35.0.1/lib/versioncheck.php",
+      "reviewed": "2026-10-14",
+      "scope": "Reviewed Nextcloud 35.0.1 PHP gate requires PHP below 8.6. Fresh-install NC35 family eligibility is separate from project patch validation; independent PHP/database profile bounds and selected connector requirements still apply."
+    },
+    {
+      "url": "https://pkg.freebsd.org/FreeBSD:15:amd64/latest/packagesite.pkg",
+      "reviewed": "2026-10-14",
+      "scope": "Dated catalog: PHP 8.5.11, MariaDB 12.3.3, ONLYOFFICE 9.4.0_4 and fonts; availability must be rediscovered. Other dependency versions are pinned by the exact graph, not an invented compatibility range."
+    },
+    {
+      "url": "https://pkg.freebsd.org/FreeBSD:15:amd64/quarterly/packagesite.pkg",
+      "reviewed": "2026-10-14",
+      "scope": "Dated binary catalog evidence only. Native FreeBSD/QEMU end-to-end acceptance has not been performed."
+    }
+  ]
+}

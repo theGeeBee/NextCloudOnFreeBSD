@@ -1,0 +1,4 @@
+# Package selection now lives in resources/versions.json.
+# The host resolver expands the reviewed profile and signed repository dependency
+# graph into the immutable per-jail packages.lock. This retained legacy resource
+# is not an alternate package list and is never used for selection or fallback.

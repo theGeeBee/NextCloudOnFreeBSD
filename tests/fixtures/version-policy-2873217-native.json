@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "legacy_target": "15.1-RELEASE/amd64",
+  "defaults": {"freebsd_release":"15.1-RELEASE","architecture":"amd64","nextcloud_min":"35.0.0","onlyoffice_min":"9.4.0","nextcloud_exact":"","onlyoffice_exact":""},
+  "targets": [{"release":"15.1-RELEASE","architecture":"amd64","abi":"FreeBSD:15:amd64","pkgbase_keys":["/usr/share/keys/pkgbase-15/trusted/awskms-15","/usr/share/keys/pkgbase-15/trusted/backup-signing-15"]}],
+  "fonts": {"catalog":"packages/fonts.txt"},
+  "profiles": [{
+    "id":"nc35-oo94-php85-mariadb123",
+    "targets":["15.1-RELEASE/amd64"],
+    "applications":{"nextcloud":{"min":"35.0.0","max_exclusive":"35.0.2"},"onlyoffice":{"exact":"9.4.0"}},
+    "connector":{"version":{"exact":"10.2.1"},"nextcloud":{"min":"33.0.0","max_exclusive":"36.0.0"},"php":{"min":"8.2.0","max_exclusive":"8.6.0"}},
+    "onlyoffice_runtime":"native-community-memory-embedded",
+    "dependency_policy":"exact-repository-closure",
+    "php_suffix":"85",
+    "roles":{
+      "manager":{"package":"bastille","origin":"sysutils/bastille","groups":["host"],"range":{"exact":"1.4.4"}},
+      "php":{"package":"php85","origin":"lang/php85","groups":["nextcloud"],"range":{"min":"8.5.0","max_exclusive":"8.6.0"}},
+      "database":{"package":"mariadb123-server","origin":"databases/mariadb123-server","groups":["nextcloud"],"range":{"min":"12.3.0","max_exclusive":"12.4.0"}},
+      "database_client":{"package":"mariadb123-client","origin":"databases/mariadb123-client","groups":["nextcloud"],"range":{"min":"12.3.0","max_exclusive":"12.4.0"}},
+      "web":{"package":"apache24","origin":"www/apache24","groups":["nextcloud"],"range":{"min":"2.4.0","max_exclusive":"2.5.0"}},
+      "cache":{"package":"redis","origin":"databases/redis","groups":["nextcloud"],"range":{"min":"4.0.0","max_exclusive":"9.0.0"}},
+      "onlyoffice":{"package":"onlyoffice-documentserver","origin":"www/onlyoffice-documentserver","groups":["onlyoffice"],"range":{"exact":"9.4.0"}}
+    },
+    "roots":{"host":[],"nextcloud":["gnupg","python3"],"onlyoffice":["python3","fontconfig","dns/c-ares","devel/libuv"]},
+    "php_extensions":["php{suffix}-bcmath","php{suffix}-bz2","php{suffix}-ctype","php{suffix}-curl","php{suffix}-dom","php{suffix}-exif","php{suffix}-fileinfo","php{suffix}-filter","php{suffix}-gd","php{suffix}-gmp","php{suffix}-iconv","php{suffix}-intl","php{suffix}-mbstring","php{suffix}-pcntl","php{suffix}-pdo","php{suffix}-pdo_mysql","php{suffix}-pecl-APCu","php{suffix}-pecl-imagick","php{suffix}-pecl-redis","php{suffix}-phar","php{suffix}-posix","php{suffix}-session","php{suffix}-sodium","php{suffix}-simplexml","php{suffix}-sysvsem","php{suffix}-xml","php{suffix}-xmlreader","php{suffix}-xmlwriter","php{suffix}-zip","php{suffix}-zlib"],
+    "extension_ranges":{"php{suffix}-pecl-APCu":{"min":"4.0.6","max_exclusive":"6.0.0"},"php{suffix}-pecl-redis":{"min":"2.2.6","max_exclusive":"7.0.0"}},
+    "optional_roots":{"acme":{"nextcloud":["security/py-certbot"]},"zsh":{"nextcloud":["zsh"],"onlyoffice":["zsh"]},"ssh_admin":{"nextcloud":["doas"],"onlyoffice":["doas"]},"antivirus":{"nextcloud":["security/clamav"]}}
+  }],
+  "evidence": [
+    {"url":"https://pkg.FreeBSD.org/FreeBSD:15:amd64/latest/","reviewed":"2026-10-15","scope":"Native signed ONLYOFFICE 9.4.0_4 package requires libcares.so.2 and libuv.so.1 outside its declared dependency edges. Explicit roots dns/c-ares (1.34.8) and devel/libuv (1.52.1) match the signed catalog providers and native solver. Exact versions/checksums are selected into each new lock; solver additions must fail before provisioning. No existing lock is amended."},
+    {"url":"https://github.com/BastilleBSD/bastille/blob/1.4.4/usr/local/share/bastille/bootstrap.sh","reviewed":"2026-10-14","scope":"Pkgbase bootstrap installs the base-jail set into the release root; thick creation copies its package database. FreeBSD-* packages with matching base/FreeBSD-* origins are separate OS inventory, not application dependencies. No OS upgrade is authorized by the application lock."},
+    {"url":"https://github.com/freebsd/freebsd-src/blob/releng/15.1/release/packages/template.ucl","reviewed":"2026-10-14","scope":"Native base package origin is base/${PKG_NAME_PREFIX}-${PKGNAME}; distinguish exact reserved name/origin pairs from unselected ports."},
+    {"url":"https://docs.nextcloud.com/server/35/admin_manual/configuration_server/caching_configuration.html","reviewed":"2026-10-14","scope":"NC requires Redis >=4.0.0 and phpredis >=2.2.6. This profile limits Redis to pre-9 releases; future major service/layout changes require review. The FreeBSD redis port is currently 8.10.2."},
+    {"url":"https://docs.nextcloud.com/server/35/admin_manual/installation/system_requirements.html","reviewed":"2026-10-14","scope":"Reviewed NC 35.0.0/35.0.1 only. Broader upstream PHP/database support does not extend this installer's PHP 8.5/MariaDB 12.3 profile. FreeBSD is not an upstream-listed server OS."},
+    {"url":"https://github.com/freebsd/freebsd-ports/blob/main/lang/php85/Makefile","reviewed":"2026-10-14","scope":"PHP 8.5 CLI/FPM and built-in OPcache; extension names retained from the reviewed installer catalog. PECL extension versions come from the exact dependency graph."},
+    {"url":"https://github.com/freebsd/freebsd-ports/blob/main/databases/mariadb123-server/Makefile","reviewed":"2026-10-14","scope":"Matching MariaDB 12.3 server/client package family and native rc layout."},
+    {"url":"https://github.com/freebsd/freebsd-ports/blob/main/www/onlyoffice-documentserver/Makefile","reviewed":"2026-10-14","scope":"Reviewed native ONLYOFFICE 9.4.0_4 (component build 129); package revisions retain runtime layout checks. nginx/Supervisor use exact dependencies. Upstream 10.0 security-fix backports are unverified: compatibility is not a security claim."},
+    {"url":"https://github.com/ONLYOFFICE/server/blob/v9.4.0.129/Common/sources/runtime/profile.js","reviewed":"2026-10-14","scope":"Community 9.4 uses memory state and embedded conversion; no separate database, queue or converter service."},
+    {"url":"https://github.com/BastilleBSD/bastille/releases/tag/1.4.4","reviewed":"2026-10-14","scope":"Only the reviewed Bastille 1.4.4 command layout is accepted."},
+    {"url":"https://github.com/ONLYOFFICE/onlyoffice-nextcloud/blob/v10.2.1/appinfo/info.xml","reviewed":"2026-10-14","scope":"Connector 10.2.1 manifest permits NC33-35 and PHP8.2-8.5; only the reviewed installer profile is selected."},
+    {"url":"https://apps.nextcloud.com/api/v1/platform/35.0.1/apps.json","reviewed":"2026-10-14","scope":"Stable signed ONLYOFFICE connector 10.2.1; Nextcloud's native app installer must verify the downloaded archive signature before any migrations."},
+    {"url":"https://github.com/nextcloud/server/blob/v35.0.1/lib/versioncheck.php","reviewed":"2026-10-14","scope":"Reviewed Nextcloud patch-level PHP gate requires PHP below 8.6; unreviewed application patches fail closed."},
+    {"url":"https://pkg.freebsd.org/FreeBSD:15:amd64/latest/packagesite.pkg","reviewed":"2026-10-14","scope":"Dated catalog: PHP 8.5.11, MariaDB 12.3.3, ONLYOFFICE 9.4.0_4 and fonts; availability must be rediscovered. Other dependency versions are pinned by the exact graph, not an invented compatibility range."},
+    {"url":"https://pkg.freebsd.org/FreeBSD:15:amd64/quarterly/packagesite.pkg","reviewed":"2026-10-14","scope":"Dated binary catalog evidence only. Native FreeBSD/QEMU end-to-end acceptance has not been performed."}
+  ]
+}
