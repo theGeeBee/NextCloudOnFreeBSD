@@ -15,7 +15,7 @@ from urllib.parse import unquote, urlsplit
 ROOT_FILES = ("install.sh", "LICENSE", "pyproject.toml", "README.md")
 # Explicit selection keeps release contents stable as documentation grows.
 PUBLIC_DOCS = (
-    "admin-checks.md", "backup-restore.md", "configuration.md", "distribution.md", "firewall-transactions.md",
+    "admin-checks.md", "backup-restore.md", "bootstrap.md", "configuration.md", "distribution.md", "firewall-transactions.md",
     "fonts.md", "freebsd-15.1.md", "freebsd-utilities.md", "fresh-install-profiles.md", "jails.md", "lifecycle-state.md",
     "maintenance-recovery.md", "onlyoffice-plugins.md", "onlyoffice.md", "operations.md",
     "reverse-proxy.md", "security-assessment.md", "ssh.md", "troubleshooting.md",

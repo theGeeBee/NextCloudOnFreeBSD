@@ -36,6 +36,14 @@ current native family-selection evidence and explicit remaining limitations.
 
 ## Installation after separately approved publication
 
+The primary user command is the standalone-script launcher on the
+[release page](https://github.com/theGeeBee/NextCloudOnFreeBSD/releases/tag/v2026.10.23).
+It verifies `bootstrap.sh` from a full public source commit; that script verifies
+the original archive and invokes its unchanged `install.sh`. Follow the
+[publication recipe](bootstrap.md) to keep script, archive and announcement pins
+aligned. The published archive/tag are immutable; this source follow-up does not
+replace them. The existing inline builder command below remains supported.
+
 A publisher must choose a versioned HTTPS asset location and publish the exact
 reviewed archive bytes and independently trusted SHA256. For example, on a
 maintainer workstation with Python 3.11+:

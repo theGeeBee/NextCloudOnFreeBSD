@@ -148,7 +148,19 @@ is required regardless of the open-font profile.
 
 ## No-clone installation
 
+### Recommended: standalone release bootstrap
+
+Use the short command on the [versioned release page](https://github.com/theGeeBee/NextCloudOnFreeBSD/releases/tag/v2026.10.23).
+It saves and checksum-verifies `bootstrap.sh` from a full public commit before
+running it. That script verifies the pinned archive, retains the payload and
+hands off to its unchanged `install.sh install`. No Git, Bash or preinstalled
+Python is required. This is fresh-install transport only; later management uses
+the retained payload. See [the aligned publication recipe](bootstrap.md).
+
 ### Clean FreeBSD: one generated command, no preinstalled Python
+
+The inline command below remains supported; the release page instead advertises
+the shorter standalone-script launcher above. Both use the same tested transport.
 
 A maintainer can use the existing builder to print a single copy-and-paste
 `/bin/sh -c ...` command for the **exact archive just built**:

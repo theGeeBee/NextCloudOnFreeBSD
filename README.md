@@ -48,12 +48,12 @@ and [storage and operations](docs/operations.md) before installation.
 
 ## Install
 
-**Clean host without Git, Bash or Python:** use the FreeBSD-base-only command
-generated for a reviewed, version-pinned release archive. It downloads with
-`fetch`, verifies SHA256 before extraction, retains the payload and starts the
-existing installer. See [release installation instructions](docs/release.md)
-and the [distribution guide](docs/distribution.md#no-clone-installation) for
-artifact availability and verification.
+**Clean host without Git, Bash or Python:** use the short, checksum-pinned
+`bootstrap.sh` command on the [release page](https://github.com/theGeeBee/NextCloudOnFreeBSD/releases/tag/v2026.10.23).
+It verifies the script and release archive, retains the payload and hands off to
+its unchanged `install.sh`. See [the release recipe](docs/bootstrap.md) and
+[distribution guide](docs/distribution.md#no-clone-installation). Use the retained
+installer for later management, not the bootstrap.
 
 From a reviewed checkout or verified, extracted release, run as root in an
 interactive terminal on the destination host:
