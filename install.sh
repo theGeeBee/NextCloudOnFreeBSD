@@ -69,7 +69,7 @@ Archive commands: install, configure, resume, verify, backup, remove, restore,
 add-user, recover-install, recover-network (including compatibility aliases).
 Menu, list, status, check-updates, check-security, maintenance, upgrade, plan and resolve require an unpacked payload.
 Use a pinned cloud-installer/ release archive and its trusted SHA256. No release
-is selected or downloaded automatically. See docs/distribution.md.
+is selected or downloaded automatically.
 USAGE
 }
 

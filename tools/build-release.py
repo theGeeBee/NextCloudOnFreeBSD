@@ -13,15 +13,7 @@ from urllib.parse import unquote, urlsplit
 
 
 ROOT_FILES = ("install.sh", "LICENSE", "pyproject.toml", "README.md")
-# Explicit selection keeps release contents stable as documentation grows.
-PUBLIC_DOCS = (
-    "admin-checks.md", "backup-restore.md", "bootstrap.md", "configuration.md", "distribution.md", "firewall-transactions.md",
-    "fonts.md", "freebsd-15.1.md", "freebsd-utilities.md", "fresh-install-profiles.md", "jails.md", "lifecycle-state.md",
-    "maintenance-recovery.md", "onlyoffice-plugins.md", "onlyoffice.md", "operations.md",
-    "reverse-proxy.md", "security-assessment.md", "ssh.md", "troubleshooting.md",
-    "upgrade.md", "versions.md", "release.md", "third-party-notices.md",
-    "nextcloud-update-recipe.md", "testing-boundaries.md", "verification.md",
-)
+# Documentation and tests stay in the development repository, not the release.
 
 # First-stage transport only. The authenticated payload owns policy checks and
 # pkg/Python consent. No downloaded shell script, alternate installer or Python
@@ -116,7 +108,6 @@ def payload_files(root):
     paths = {root / name for name in ROOT_FILES}
     for pattern in ("installer/*.py", "resources/jails/*.sh", "resources/jails/*.php"):
         paths.update(root.glob(pattern))
-    paths.update(root / "docs" / name for name in PUBLIC_DOCS)
     paths.update(root / "resources/templates/nextcloud" / name for name in NEXTCLOUD_TEMPLATES)
     paths.update(root / "resources/templates/onlyoffice" / name for name in ONLYOFFICE_TEMPLATES)
     paths.update(root / name for name in ("resources/versions.json", "resources/plugins/onlyoffice.json", "resources/packages/fonts.txt", "examples/config.json",

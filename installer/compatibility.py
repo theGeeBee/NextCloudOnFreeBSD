@@ -325,7 +325,7 @@ def validate(config, discovered, nextcloud, onlyoffice=None, *, policy=None):
     family_constraints(effective.get("version_families", {}),
                        dict(applications, **({"connector": connector["version"]} if connector else {})), roles, merged)
     if backend == "onlyoffice" and "webfonts" in selected["onlyoffice"] and not getattr(config, "accept_microsoft_fonts", False):
-        raise ValueError("ONLYOFFICE requires webfonts: review docs/fonts.md and set accept_microsoft_fonts after accepting its EULA")
+        raise ValueError("ONLYOFFICE requires webfonts: review https://corefonts.sourceforge.net/eula.htm and set accept_microsoft_fonts after accepting its EULA")
     if none:
         return {"profile": profile["id"], "roles": roles, "roots": roots, "packages": selected}
     if vm:

@@ -1,11 +1,11 @@
 #!/bin/sh
-# Release transport only: verify and retain v2026.10.23, then hand off to its
+# Release transport only: verify and retain v2026.10.27, then hand off to its
 # unmodified install.sh. No provisioning logic or prerequisite installation here.
 set +x
 set +v
 set -eu
 [ "$#" -eq 0 ] || { printf '%s\n' 'Usage: sh bootstrap.sh (fresh installation only)' >&2; exit 1; }
-set -- 'https://github.com/theGeeBee/NextCloudOnFreeBSD/releases/download/v2026.10.23/NextCloudOnFreeBSD-2026.10.23.tar.gz' 'b8740d8263ca26d9ed73b1b9584a4dda145422adc4b84370875d76892cbeaad2'
+set -- 'https://github.com/theGeeBee/NextCloudOnFreeBSD/releases/download/v2026.10.27/NextCloudOnFreeBSD-2026.10.27.tar.gz' '688bf580cae161b867b27a0e07c70f3249596d0dd17c2fe4c361cafb412eaa3a'
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 export PATH
 unset SSL_NO_VERIFY_PEER SSL_NO_VERIFY_HOSTNAME SSL_ALLOW_SSL3 TAR_OPTIONS TAR_READER_OPTIONS TAR_WRITER_OPTIONS
